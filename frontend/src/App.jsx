@@ -21,6 +21,7 @@ function App() {
         <button onClick={() => setCount((count) => count + 1)}>
           count is {count}
         </button>
+        <h1 className="text-red-500 text-3xl font-bold">Hello Tailwind v3</h1>
         <p>
           Edit <code>src/App.jsx</code> and save to test HMR
         </p>
