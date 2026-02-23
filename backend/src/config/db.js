@@ -7,7 +7,10 @@ if (!process.env.DATABASE_URL) {
 // Supabase requires SSL:
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
+  ssl: { 
+    //require: true,
+    rejectUnauthorized: false, 
+  },
 });
 
 module.exports = pool;

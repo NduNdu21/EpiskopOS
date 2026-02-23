@@ -1,37 +1,19 @@
-const express = require("express");
-const cors = require("cors");
-const path = require("path");
-
-// ABSOLUTE path to backend/.env
-require("dotenv").config({
-  path: path.join(__dirname, "../.env"),
-});
-
-console.log("ENV PATH:", path.join(__dirname, "../.env"));
-console.log("EXISTS:", require("fs").existsSync(path.join(__dirname, "../.env")));
-
-
+require("dotenv").config();
 const pool = require("./config/db");
+const express = require("express");
 
 const app = express();
-app.use(cors());
-app.use(express.json());
 
-app.get("/", (_req, res) => res.send("API running..."));
+const port = process.env.PORT || 5000;
 
-const PORT = process.env.PORT || 5000;
 
-async function start() {
+app.listen(port, "0.0.0.0", async () => {
   try {
-    const result = await pool.query("SELECT NOW()");
-    console.log("DB connected:", result.rows[0]);
-    app.listen(PORT, () =>
-      console.log(`Server running on http://localhost:${PORT}`)
-    );
+    const res = await pool.query("SELECT NOW()");
+    console.log("DB connected:", res.rows[0]);
   } catch (err) {
-    console.error("DB connection failed:", err);
-    process.exit(1);
+    console.error("DB error:", err);
   }
-}
-
-start();
+  
+  console.log(`Server running on http://0.0.0.0:${port}`);
+});
