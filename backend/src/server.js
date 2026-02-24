@@ -6,7 +6,7 @@ const app = express();
 
 const port = process.env.PORT || 5000;
 
-
+//Start the server and test DB connection
 app.listen(port, "0.0.0.0", async () => {
   try {
     const res = await pool.query("SELECT NOW()");
