@@ -1,8 +1,9 @@
-//Register script
 
 const pool = require("../config/db");
 const bcrypt = require("bcrypt");
+const generateToken = require("../utils/generateToken");
 
+//register controller
 exports.register = async(req, res) => {
     const { name, email, password, role } = req.body;
 
@@ -21,3 +22,40 @@ exports.register = async(req, res) => {
         res.status(500).json({ error: err.message });
     }
 }
+
+//login controller
+exports.login = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    const result = await pool.query(
+      "SELECT * FROM users WHERE username = $1",
+      [username]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const user = result.rows[0];
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const token = generateToken(user);
+
+    res.json({
+        success: true,
+        data: {
+            token,
+            role: user.role
+        }
+    });
+
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
