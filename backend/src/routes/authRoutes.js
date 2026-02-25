@@ -14,6 +14,14 @@ router.post("/login", (req, res, next) => {
 }, login);
 
 //register router
-router.post("/register", register);
+router.post("/register", (req, res, next) => {
+  const { name, email, password, role } = req.body;
+
+  if (!name || !email || !password) {
+    return res.status(400).json({ message: "Name, email and password required"});
+  }
+  
+  next();
+}, register);
 
 module.exports = router;
