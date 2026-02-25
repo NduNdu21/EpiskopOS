@@ -6,7 +6,13 @@ const app = express();
 
 const port = process.env.PORT || 5000;
 
-//Start the server and test DB connection
+app.use(express.json());
+
+// Register your routes
+const authRoutes = require("./routes/authRoutes");
+app.use("/api/auth", authRoutes);
+
+// Start server + test DB
 app.listen(port, "0.0.0.0", async () => {
   try {
     const res = await pool.query("SELECT NOW()");
