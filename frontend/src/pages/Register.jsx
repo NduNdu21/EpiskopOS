@@ -23,6 +23,13 @@ const Register = () => {
       <form onSubmit={handleSubmit} className="p-6 bg-white shadow rounded">
         <h2 className="text-xl mb-4">Register</h2>
 
+        <input 
+            name="name"
+            placeholder="Name"
+            onChange={handleChange}
+            className="border p-2 mb-3 w-full"
+        />
+
         <input
           name="email"
           type="email"
@@ -37,6 +44,12 @@ const Register = () => {
           placeholder="Password"
           onChange={handleChange}
           className="border p-2 mb-3 w-full"
+        />
+
+        <input
+            name="role"
+            type="radio"
+            value="pastor"
         />
 
         <button className="bg-green-500 text-white px-4 py-2 w-full">
