@@ -19,7 +19,31 @@ const Register = () => {
   };
 
   return (
-    <div></div>
+    <div className="flex items-center justify-center h-screen">
+      <form onSubmit={handleSubmit} className="p-6 bg-white shadow rounded">
+        <h2 className="text-xl mb-4">Register</h2>
+
+        <input
+          name="email"
+          type="email"
+          placeholder="Email"
+          onChange={handleChange}
+          className="border p-2 mb-3 w-full"
+        />
+
+        <input
+          name="password"
+          type="password"
+          placeholder="Password"
+          onChange={handleChange}
+          className="border p-2 mb-3 w-full"
+        />
+
+        <button className="bg-green-500 text-white px-4 py-2 w-full">
+          Register
+        </button>
+      </form>
+    </div>
   );
 };
 
