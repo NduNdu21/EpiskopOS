@@ -4,10 +4,10 @@ const { login, register } = require("../controllers/authController");
 
 //login router
 router.post("/login", (req, res, next) => {
-  const { username, password } = req.body;
+  const { email, password } = req.body;
 
-  if (!username || !password) {
-    return res.status(400).json({ message: "Username and password required" });
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email and password required" });
   }
 
   next();

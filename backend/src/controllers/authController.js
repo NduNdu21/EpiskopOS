@@ -26,11 +26,11 @@ exports.register = async(req, res) => {
 //login controller
 exports.login = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
 
     const result = await pool.query(
-      "SELECT * FROM users WHERE username = $1",
-      [username]
+      "SELECT * FROM users WHERE email = $1",
+      [email]
     );
 
     if (result.rows.length === 0) {
