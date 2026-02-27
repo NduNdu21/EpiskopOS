@@ -28,8 +28,8 @@ const Register = () => {
       return;
     }
 
-    
-try {
+
+    try {
       setLoading(true);
       const data = await registerUser(form);
       // Assuming API returns 201 + JSON of user or { message }
