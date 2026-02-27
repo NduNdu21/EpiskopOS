@@ -25,3 +25,16 @@ export const registerUser = async (data) => {
 
     return handleResponse(response);
 }
+
+
+export const loginUser = async (payload) => {
+  const res = await fetch(`${API_BASE}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await handleResponse(res);
+  const token = data?.data?.token || data?.token;
+  if (token) localStorage.setItem("token", token);
+  return data;
+};
