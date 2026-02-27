@@ -38,3 +38,12 @@ export const loginUser = async (payload) => {
   if (token) localStorage.setItem("token", token);
   return data;
 };
+
+
+export const getProtectedData = async () => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_BASE}/test/protected`, {
+    headers: { Authorization: token ? `Bearer ${token}` : "" },
+  });
+  return handleResponse(res);
+};
