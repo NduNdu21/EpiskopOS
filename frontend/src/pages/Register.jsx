@@ -77,9 +77,23 @@ const Register = () => {
           value="pastor"
         />
 
-        <button className="bg-green-500 text-white px-4 py-2 w-full">
-          Register
+
+        {/* Error display */}
+        {error && (
+          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2">
+            {error}
+          </p>
+        )}
+
+        {/* Submit button */}
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full rounded-md bg-indigo-600 text-white py-2.5 font-medium hover:bg-indigo-700 disabled:opacity-60"
+        >
+          {loading ? "Registering..." : "Register"}
         </button>
+
       </form>
     </div>
   );
