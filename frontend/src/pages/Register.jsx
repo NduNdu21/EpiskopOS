@@ -44,17 +44,24 @@ const Register = () => {
   };
 
   return (
-    <div className="flex items-center justify-center h-screen">
-      <form onSubmit={handleSubmit} className="p-6 bg-white shadow rounded">
-        <h2 className="text-xl mb-4">Register</h2>
+    <div className="flex items-center justify-center min-h-screen">
+      <form onSubmit={handleSubmit} className="w-full max-w-md p-6 bg-white shadow rounded">
+        <h2 className="text-xl mb-4 font-semibold">Register</h2>
 
-        <input
-          name="name"
-          placeholder="Name"
-          onChange={handleChange}
-          className="border p-2 mb-3 w-full"
-        />
+        {/* Name */}
+        <div className="space-y-1">
+          <label htmlFor="name" >Name</label>
+          <input
+            name="name"
+            type="text"
+            value={form.name}
+            placeholder="Name"
+            onChange={handleChange}
+            className="border p-2 mb-3 w-full"
+          />
+        </div>
 
+        {/* Email */}
         <input
           name="email"
           type="email"
@@ -63,6 +70,7 @@ const Register = () => {
           className="border p-2 mb-3 w-full"
         />
 
+        {/* Password */}
         <input
           name="password"
           type="password"
@@ -71,6 +79,7 @@ const Register = () => {
           className="border p-2 mb-3 w-full"
         />
 
+        {/* Role */}
         <input
           name="role"
           type="radio"
