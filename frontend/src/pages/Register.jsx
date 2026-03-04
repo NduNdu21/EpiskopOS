@@ -45,7 +45,7 @@ const Register = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen">
-      <form onSubmit={handleSubmit} className="w-full max-w-md p-6 bg-white shadow rounded">
+      <form onSubmit={handleSubmit} className="w-full max-w-md p-6 bg-white shadow rounded space-y-5">
         <h2 className="text-xl mb-4 font-semibold">Register</h2>
 
         {/* Name */}
@@ -62,30 +62,59 @@ const Register = () => {
         </div>
 
         {/* Email */}
-        <input
-          name="email"
-          type="email"
-          placeholder="Email"
-          onChange={handleChange}
-          className="border p-2 mb-3 w-full"
-        />
+        <div className="space-y-1">
+          <label htmlFor="email">Email</label>
+          <input
+            name="email"
+            type="email"
+            value={form.email}
+            placeholder="example@email.com"
+            onChange={handleChange}
+            className="border p-2 mb-3 w-full"
+          />
+        </div>
 
         {/* Password */}
-        <input
-          name="password"
-          type="password"
-          placeholder="Password"
-          onChange={handleChange}
-          className="border p-2 mb-3 w-full"
-        />
+        <div className="space-y-1">
+          <label htmlFor="password">Password</label>
+          <input
+            name="password"
+            type="password"
+            value={form.password}
+            placeholder="Enter password"
+            onChange={handleChange}
+            className="border p-2 mb-3 w-full"
+          />
+        </div>
 
         {/* Role */}
-        <input
-          name="role"
-          type="radio"
-          value="pastor"
-        />
+        {/* Field set to capture multiple radio buttons */}
+        <fieldset className="space-y-2">
+          <legend>Role</legend>
+          <div className="flex items-center">
+            <label>
+              <input
+                type="radio"
+                name="role"
+                value="user"
+                checked={form.role === "user"}
+                onChange={handleChange}
+              />
+              <span>User</span>
+            </label>
 
+            <label>
+              <input
+                type="radio"
+                name="role"
+                value="admin"
+                checked={form.role === "admin"}
+                onChange={handleChange}
+              />
+              <span>Admin</span>
+            </label>
+          </div>
+        </fieldset>
 
         {/* Error display */}
         {error && (
