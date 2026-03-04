@@ -1,6 +1,7 @@
 
 const API_BASE = import.meta.env.VITE_API_BASE;
 
+console.log("API_BASE:", API_BASE);
 
 async function handleResponse(res) {
   const isJson = res.headers.get("content-type")?.includes("application/json");
@@ -23,7 +24,10 @@ export const registerUser = async (data) => {
         body: JSON.stringify(data),
     });
 
-    return handleResponse(response);
+    const text = await response.text();
+    const json = text ? JSON.parse(text) : {};
+    if (!response.ok) throw new Error(json.message);
+    return json;
 }
 
 

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { registerUser } from "../api";
 
 const Register = () => {
-  const [form, setForm] = useState({ name: "", email: "", password: "", role: "user" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", role: "volunteer" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -88,33 +88,22 @@ const Register = () => {
         </div>
 
         {/* Role */}
-        {/* Field set to capture multiple radio buttons */}
-        <fieldset className="space-y-2">
-          <legend>Role</legend>
-          <div className="flex items-center">
-            <label>
-              <input
-                type="radio"
-                name="role"
-                value="user"
-                checked={form.role === "user"}
-                onChange={handleChange}
-              />
-              <span>User</span>
-            </label>
-
-            <label>
-              <input
-                type="radio"
-                name="role"
-                value="admin"
-                checked={form.role === "admin"}
-                onChange={handleChange}
-              />
-              <span>Admin</span>
-            </label>
-          </div>
-        </fieldset>
+        <div className="space-y-1 mb-3">
+          <label htmlFor="role" className="text-sm font-medium">Role</label>
+          <select
+            id="role"
+            name="role"
+            value={form.role}
+            onChange={handleChange}
+            className="border p-2 w-full rounded"
+          >
+            {["admin", "volunteer", "lighting", "sound", "media", "instrumentalists"].map((r) => (
+              <option key={r} value={r}>
+                <span className="capitalize">{r}</span>
+              </option>
+            ))}
+          </select>
+        </div>
 
         {/* Error display */}
         {error && (
