@@ -46,13 +46,7 @@ exports.login = async (req, res) => {
 
     const token = generateToken(user);
 
-    res.json({
-        success: true,
-        data: {
-            token,
-            role: user.role
-        }
-    });
+    res.json({success: true, token, role: user.role});
 
   } catch (error) {
     console.error("Login error:", error);
