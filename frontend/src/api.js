@@ -16,6 +16,7 @@ async function handleResponse(res) {
   return data;
 }
 
+//Users
 
 export const registerUser = async (data) => {
     const response = await fetch(`${API_BASE}/auth/register`, {
@@ -48,6 +49,76 @@ export const getProtectedData = async () => {
   const token = localStorage.getItem("token");
   const res = await fetch(`${API_BASE}/test/protected`, {
     headers: { Authorization: token ? `Bearer ${token}` : "" },
+  });
+  return handleResponse(res);
+};
+
+//Events
+export const getEvents = async () => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_BASE}/events`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleResponse(res);
+};
+
+
+export const getMyEvents = async () => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_BASE}/events/my`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleResponse(res);
+};
+
+
+export const createEvent = async (data) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_BASE}/events`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  return handleResponse(res);
+};
+
+
+export const updateEvent = async (id, data) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_BASE}/events/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  return handleResponse(res);
+};
+
+
+export const deleteEvent = async (id) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_BASE}/events/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleResponse(res);
+};
+
+
+export const assignVolunteer = async (eventId, userId) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_BASE}/events/${eventId}/assign`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ user_id: userId }),
   });
   return handleResponse(res);
 };
