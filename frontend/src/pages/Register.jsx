@@ -32,9 +32,7 @@ const Register = () => {
     try {
       setLoading(true);
       const data = await registerUser(form);
-      // Assuming API returns 201 + JSON of user or { message }
       alert(data?.message || "Registered successfully.");
-      // optionally redirect here
     } catch (err) {
       setError(err?.message || "Registration failed.");
     } finally {
@@ -44,84 +42,92 @@ const Register = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <form onSubmit={handleSubmit} className="w-full max-w-md p-6 bg-white shadow rounded space-y-5">
-        <h2 className="text-xl mb-4 font-semibold">Register</h2>
+    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-b from-dark-teal to-ash-grey">
+      <div className="w-full max-w-sm px-8 flex flex-col items-center">
 
-        {/* Name */}
-        <div className="space-y-1">
-          <label htmlFor="name" >Name</label>
-          <input
-            name="name"
-            type="text"
-            value={form.name}
-            placeholder="Name"
-            onChange={handleChange}
-            className="border p-2 mb-3 w-full"
-          />
+        <div className="mb-16 text-center">
+          <h1 className="text-5xl font-bold text-beige tracking-tight">EpiskopOS</h1>
+          <p className="text-beige text-lg mt-2 opacity-80">an Overseer</p>
         </div>
 
-        {/* Email */}
-        <div className="space-y-1">
-          <label htmlFor="email">Email</label>
-          <input
-            name="email"
-            type="email"
-            value={form.email}
-            placeholder="example@email.com"
-            onChange={handleChange}
-            className="border p-2 mb-3 w-full"
-          />
-        </div>
+        <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
+          <h2 className="text-xl mb-2 font-semibold text-beige">Register</h2>
 
-        {/* Password */}
-        <div className="space-y-1">
-          <label htmlFor="password">Password</label>
-          <input
-            name="password"
-            type="password"
-            value={form.password}
-            placeholder="Enter password"
-            onChange={handleChange}
-            className="border p-2 mb-3 w-full"
-          />
-        </div>
+          {/* Name */}
+          <div className="flex flex-col gap-1">
+            <label className="sr-only" htmlFor="name" >Name</label>
+            <input
+              name="name"
+              type="text"
+              value={form.name}
+              placeholder="Name"
+              onChange={handleChange}
+              className="w-full px-6 py-4 rounded-2xl text-beige text-lg placeholder-beige/70 outline-none bg-white/15 border border-beige/60"
+            />
+          </div>
 
-        {/* Role */}
-        <div className="space-y-1 mb-3">
-          <label htmlFor="role" className="text-sm font-medium">Role</label>
-          <select
-            id="role"
-            name="role"
-            value={form.role}
-            onChange={handleChange}
-            className="border p-2 w-full rounded"
+          {/* Email */}
+          <div className="flex flex-col gap-1">
+            <label className="sr-only" htmlFor="email">Email</label>
+            <input
+              name="email"
+              type="email"
+              value={form.email}
+              placeholder="example@email.com"
+              onChange={handleChange}
+              className="w-full px-6 py-4 rounded-2xl text-beige text-lg placeholder-beige/70 outline-none bg-white/15 border border-beige/60"
+            />
+          </div>
+
+          {/* Password */}
+          <div className="flex flex-col gap-1">
+            <label className="sr-only" htmlFor="password">Password</label>
+            <input
+              name="password"
+              type="password"
+              value={form.password}
+              placeholder="Enter password"
+              onChange={handleChange}
+              className="w-full px-6 py-4 rounded-2xl text-beige text-lg placeholder-beige/70 outline-none bg-white/15 border border-beige/60"
+            />
+          </div>
+
+          {/* Role */}
+          <div className="flex flex-col gap-2">
+            <label htmlFor="role" className="text-beige/80 text-sm font-medium pl-1">Role</label>
+            <select
+              id="role"
+              name="role"
+              value={form.role}
+              onChange={handleChange}
+              className="w-full px-6 py-4 rounded-2xl text-beige text-lg outline-none bg-white/15 border border-beige/60"
+            >
+              {["admin", "volunteer", "lighting", "sound", "media", "instrumentalists"].map((r) => (
+                <option key={r} value={r} className="text-ink-black bg-beige">
+                  <span className="capitalize">{r}</span>
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Error display */}
+          {error && (
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2">
+              {error}
+            </p>
+          )}
+
+          {/* Submit button */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-12 py-3 rounded-full text-beige text-lg tracking-wide bg-ash-grey/30 border border-ash-grey hover:bg-ash-grey/50 disabled:opacity-60 transition-colors"
           >
-            {["admin", "volunteer", "lighting", "sound", "media", "instrumentalists"].map((r) => (
-              <option key={r} value={r}>
-                <span className="capitalize">{r}</span>
-              </option>
-            ))}
-          </select>
-        </div>
+            {loading ? "Registering..." : "Register"}
+          </button>
 
-        {/* Error display */}
-        {error && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2">
-            {error}
-          </p>
-        )}
-
-        {/* Submit button */}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-md bg-indigo-600 text-white py-2.5 font-medium hover:bg-indigo-700 disabled:opacity-60"
-        >
-          {loading ? "Registering..." : "Register"}
-        </button>
-
-      </form>
+        </form>
+      </div>
     </div>
   );
 };
