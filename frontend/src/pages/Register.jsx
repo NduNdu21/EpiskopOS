@@ -2,6 +2,7 @@
 //Imports
 import { useState } from "react";
 import { registerUser } from "../api";
+import { Link } from "react-router-dom";
 
 const Register = () => {
   const [form, setForm] = useState({ name: "", email: "", password: "", role: "volunteer" });
@@ -126,6 +127,12 @@ const Register = () => {
             {loading ? "Registering..." : "Register"}
           </button>
 
+          <p className="mt-6 text-beige/60 text-sm text-center">
+            Already have an account?{" "}
+            <Link to="/login" className="text-beige/90 underline hover:opacity-100">
+              Sign in
+            </Link>
+          </p>
         </form>
       </div>
     </div>

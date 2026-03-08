@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { loginUser } from "../api";
+import { Link } from "react-router-dom";
 
 const Login = () => {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -70,7 +71,7 @@ const Login = () => {
               className="w-full px-6 py-5 text-beige text-lg placeholder-beige/70 outline-none bg-white/15"
             />
           </div>
-          
+
           {error && (
             <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2 mb-3">
               {error}
@@ -84,6 +85,13 @@ const Login = () => {
           >
             {loading ? "Logging in..." : "Login"}
           </button>
+
+          <p className="mt-6 text-beige/60 text-sm">
+            Don't have an account?{" "}
+            <Link to="/register" className="text-beige/90 underline hover:opacity-100">
+              Register
+            </Link>
+          </p>
         </form>
       </div>
     </div>
