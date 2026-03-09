@@ -4,9 +4,7 @@ import { useState } from "react";
 import { registerUser } from "../api";
 
 const Register = () => {
-  const [form, setForm] = useState({ name: "", email: "", password: "", role: "user" });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [form, setForm] = useState({ email: "", password: "" });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -44,9 +42,9 @@ const Register = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <form onSubmit={handleSubmit} className="w-full max-w-md p-6 bg-white shadow rounded">
-        <h2 className="text-xl mb-4 font-semibold">Register</h2>
+    <div className="flex items-center justify-center h-screen">
+      <form onSubmit={handleSubmit} className="p-6 bg-white shadow rounded">
+        <h2 className="text-xl mb-4">Register</h2>
 
         {/* Name */}
         <div className="space-y-1">
@@ -61,53 +59,30 @@ const Register = () => {
           />
         </div>
 
-        {/* Email */}
-        <div className="space-y-1">
-          <label htmlFor="email">Email</label>
-          <input
-            name="email"
-            type="email"
-            value={form.email}
-            placeholder="you@example.com"
-            onChange={handleChange}
-            className="border p-2 mb-3 w-full"
-          />
-        </div>
-
-        {/* Password */}
-        <div className="space-y-1">
-          <label htmlFor="password">Password</label>
-          <input
-            name="password"
-            type="password"
-            placeholder="Password"
-            onChange={handleChange}
-            className="border p-2 mb-3 w-full"
-          />
-        </div>
-
-        {/* Role */}
         <input
-          name="role"
-          type="radio"
-          value="pastor"
+          name="email"
+          type="email"
+          placeholder="Email"
+          onChange={handleChange}
+          className="border p-2 mb-3 w-full"
         />
 
+        <input
+          name="password"
+          type="password"
+          placeholder="Password"
+          onChange={handleChange}
+          className="border p-2 mb-3 w-full"
+        />
 
-        {/* Error display */}
-        {error && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2">
-            {error}
-          </p>
-        )}
+        <input
+            name="role"
+            type="radio"
+            value="pastor"
+        />
 
-        {/* Submit button */}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-md bg-indigo-600 text-white py-2.5 font-medium hover:bg-indigo-700 disabled:opacity-60"
-        >
-          {loading ? "Registering..." : "Register"}
+        <button className="bg-green-500 text-white px-4 py-2 w-full">
+          Register
         </button>
 
       </form>
