@@ -5,7 +5,7 @@ import { registerUser } from "../api";
 import { Link } from "react-router-dom";
 
 const Register = () => {
-  const [form, setForm] = useState({ name: "", email: "", password: "", role: "volunteer" });
+  const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
