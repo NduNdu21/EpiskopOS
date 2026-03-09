@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { loginUser } from "../api";
+import { Link } from "react-router-dom";
 
 const Login = () => {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -38,44 +39,61 @@ const Login = () => {
   };
 
   return (
-    <div className="flex items-center justify-center h-screen">
-      <form onSubmit={handleSubmit} className="p-6 bg-white shadow rounded w-full max-w-sm">
-        <h2 className="text-xl mb-4 font-semibold">Login</h2>
+    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-b from-dark-teal to-ash-grey">
+      <div className="w-full max-w-sm px-8 flex flex-col items-center">
 
-        <label className="text-sm font-medium">Email</label>
-        <input
-          name="email"
-          type="email"
-          placeholder="you@example.com"
-          value={form.email}
-          onChange={handleChange}
-          className="border p-2 mb-3 w-full rounded"
-        />
+        <div className="mb-24 text-center">
+          <h1 className="text-5xl font-bold text-beige tracking-tight">EpiskopOS</h1>
+          <p className="text-beige text-lg mt-2 opacity-80">an Overseer</p>
+        </div>
 
-        <label className="text-sm font-medium">Password</label>
-        <input
-          name="password"
-          type="password"
-          placeholder="Password"
-          value={form.password}
-          onChange={handleChange}
-          className="border p-2 mb-3 w-full rounded"
-        />
+        <form onSubmit={handleSubmit} className="p-6 rounded w-full flex flex-col">
+          <h2 className="text-xl mb-4 font-semibold text-beige">Login</h2>
 
-        {error && (
-          <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2 mb-3">
-            {error}
+          <div className="w-full rounded-3xl overflow-hidden mb-10 border border-beige/60">
+            {/*<label className="text-sm font-medium text-beige">Email</label>*/}
+            <input
+              name="email"
+              type="email"
+              placeholder="You@example.com"
+              value={form.email}
+              onChange={handleChange}
+              className="w-full px-6 py-5 text-beige text-lg placeholder-beige/70 outline-none bg-white/15 border-b border-beige/60"
+            />
+
+            {/*<label className="text-sm font-medium text-beige">Password</label>*/}
+            <input
+              name="password"
+              type="password"
+              placeholder="Password"
+              value={form.password}
+              onChange={handleChange}
+              className="w-full px-6 py-5 text-beige text-lg placeholder-beige/70 outline-none bg-white/15"
+            />
+          </div>
+
+          {error && (
+            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2 mb-3">
+              {error}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-12 py-3 rounded-full text-lg bg-ash-grey/30 text-beige border border-ash-grey hover:bg-ash-grey/50 disabled:opacity-60 transition-colors"
+          >
+            {loading ? "Logging in..." : "Login"}
+          </button>
+
+          <p className="mt-6 text-beige/60 text-sm">
+            Don't have an account?{" "}
+            <Link to="/register" className="text-beige/90 underline hover:opacity-100">
+              Register
+            </Link>
           </p>
-        )}
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-blue-500 text-white px-4 py-2 w-full rounded hover:bg-blue-600 disabled:opacity-60"
-        >
-          {loading ? "Logging in..." : "Login"}
-        </button>
-      </form>
+        </form>
+      </div>
     </div>
   );
 };
