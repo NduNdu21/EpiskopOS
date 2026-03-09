@@ -2,12 +2,13 @@
 //Imports
 import { useState } from "react";
 import { registerUser } from "../api";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Register = () => {
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -34,6 +35,7 @@ const Register = () => {
       setLoading(true);
       const data = await registerUser(form);
       alert(data?.message || "Registered successfully.");
+      navigate("/login");
     } catch (err) {
       setError(err?.message || "Registration failed.");
     } finally {

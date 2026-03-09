@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { loginUser } from "../api";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -29,7 +30,7 @@ const Login = () => {
       if (token) {
         localStorage.setItem("token", token);
         localStorage.setItem("role", role);
-        alert("Login successful");
+        navigate("/");
       }
     } catch (err) {
       setError(err.message || "Login failed.");
