@@ -122,3 +122,12 @@ export const assignVolunteer = async (eventId, userId) => {
   });
   return handleResponse(res);
 };
+
+//Users
+export const getMe = async () => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_BASE}/users/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleResponse(res);
+};
