@@ -18,6 +18,9 @@ app.use("/api/auth", authRoutes);
 const eventRoutes = require("./routes/eventRoutes");
 app.use("/api/events", eventRoutes);
 
+const userRoutes = require("./routes/userRoutes");
+app.use("/api/users", userRoutes);
+
 // Start server + test DB
 app.listen(port, "0.0.0.0", async () => {
   try {
