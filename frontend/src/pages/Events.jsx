@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Menu, ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import { Menu, ChevronLeft, ChevronRight, Plus, Home, Film, MessageSquare, Users } from "lucide-react";
 import { getEvents, createEvent } from "../api";
 
 // Helper: get the Monday of the week containing a given date
@@ -29,8 +29,15 @@ const MONTH_NAMES = [
     "July", "August", "September", "October", "November", "December"
 ];
 
+const NAV_ITEMS = [
+    { label: "Home", icon: Home, path: "/" },
+    { label: "Events", icon: Film, path: "/events" },
+    { label: "Messages", icon: MessageSquare, path: "/messages" },
+    { label: "Members", icon: Users, path: "/members" },
+];
+
 const Events = () => {
-    //const navigate = useNavigate();
+    const navigate = useNavigate();
     //const role = localStorage.getItem("role");
     //const isAdmin = role === "admin";
 
@@ -199,6 +206,24 @@ const Events = () => {
                         </button>
                     ))}
                 </div>
+            </div>
+
+            {/* Nav bar bottom */}
+            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center px-4 py-3">
+                {NAV_ITEMS.map(({ label, icon: Icon, path }) => {
+                    const isActive = location.pathname === path;
+                    return (
+                        <Link
+                            key={label}
+                            to={path}
+                            className={`flex flex-col items-center gap-1 ${isActive ? "text-dark-teal" : "text-ink-black"
+                                }`}
+                        >
+                            <Icon size={26} strokeWidth={isActive ? 2.5 : 1.5} />
+                            <span className="text-xs font-medium">{label}</span>
+                        </Link>
+                    );
+                })}
             </div>
         </div>
     )
