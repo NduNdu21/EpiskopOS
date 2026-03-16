@@ -123,6 +123,15 @@ export const assignVolunteer = async (eventId, userId) => {
   return handleResponse(res);
 };
 
+export const getCurrentAndNext = async () => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_BASE}/events/current`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleResponse(res);
+};
+
+
 //Users
 export const getMe = async () => {
   const token = localStorage.getItem("token");

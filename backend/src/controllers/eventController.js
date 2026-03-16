@@ -110,3 +110,37 @@ exports.assignVolunteer = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+//Get current and next event for homepage
+exports.getCurrentAndNext = async (req, res) => {
+  try {
+    const now = new Date().toISOString();
+
+    // Current event: started but not yet ended (within 2 hours)
+    const current = await pool.query(
+      `SELECT * FROM events 
+       WHERE event_date <= $1 
+       AND event_date >= NOW() - INTERVAL '15 minutes'
+       ORDER BY event_date ASC 
+       LIMIT 1`,
+      [now]
+    );
+
+    // Next event: upcoming
+    const next = await pool.query(
+      `SELECT * FROM events 
+       WHERE event_date > $1
+       ORDER BY event_date ASC 
+       LIMIT 1`,
+      [now]
+    );
+
+    res.json({
+      onNow: current.rows[0] || null,
+      upNext: next.rows[0] || null,
+    });
+  } catch (err) {
+    console.error("getCurrentAndNext error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};

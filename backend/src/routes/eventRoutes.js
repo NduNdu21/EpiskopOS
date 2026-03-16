@@ -8,6 +8,7 @@ const {
   deleteEvent,
   assignVolunteer,
   getMyEvents,
+  getCurrentAndNext,
 } = require("../controllers/eventController");
 
 // All routes require login
@@ -19,4 +20,5 @@ router.post("/", createEvent);                        // admin
 router.put("/:id", updateEvent);                      // admin
 router.delete("/:id", deleteEvent);                   // admin
 router.post("/:id/assign", assignVolunteer);          // admin
+router.get("/current", getCurrentAndNext);            // all users
 module.exports = router;
