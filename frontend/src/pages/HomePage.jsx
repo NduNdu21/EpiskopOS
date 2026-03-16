@@ -1,11 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Home, Film, MessageSquare, Users, Menu } from "lucide-react";
 import Sidebar from "../components/Sidebar";
+import { getCurrentAndNext } from "../api";
 
 //Mock data
-const ON_NOW = { title: "Dancing Stars", duration: "15 min" };
-const UP_NEXT = { title: "ALC", duration: "6 min" };
 const UPDATES = [
   { team: "Sound team", message: "Can we get the drums higher please!!" },
   { team: "Projection team", message: "Lyrics on the board are slow" },
@@ -13,7 +12,7 @@ const UPDATES = [
 ];
 
 const NAV_ITEMS = [
-  { label: "Home", icon: Home, path: "/home" },
+  { label: "Home", icon: Home, path: "/" },
   { label: "Events", icon: Film, path: "/events" },
   { label: "Messages", icon: MessageSquare, path: "/messages" },
   { label: "Members", icon: Users, path: "/members" },
@@ -23,6 +22,32 @@ const HomePage = () => {
   const location = useLocation();
   const name = localStorage.getItem("name") || "Ndumiso";
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [onNow, setOnNow] = useState(null);
+  const [upNext, setUpNext] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getCurrentAndNext()
+      .then((data) => {
+        setOnNow(data.onNow);
+        setUpNext(data.upNext);
+      })
+      .catch(() => {
+        setOnNow(null);
+        setUpNext(null);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Helper to format event display
+  const formatEvent = (event) => {
+    if (!event) return null;
+    const date = new Date(event.event_date);
+    const now = new Date();
+    const diffMs = date - now;
+    const diffMins = Math.round(Math.abs(diffMs) / 60000);
+    return `${event.title} - ${diffMins} min`;
+  };
 
   return (
     <div className="min-h-screen bg-ash-grey flex flex-col">
@@ -50,14 +75,22 @@ const HomePage = () => {
         <h2 className="text-2xl font-light text-ink-black">On now:</h2>
         <div className="bg-beige rounded-2xl px-6 py-5 mb-6 shadow-sm">
           <p className="text-ink-black text-lg font-semibold text-center">
-            {ON_NOW.title} - {ON_NOW.duration}
+            {loading
+              ? "Loading..."
+              : onNow
+              ? formatEvent(onNow)
+              : "Nothing on right now"}
           </p>
         </div>
 
         <h2 className="text-xl font-light text-ink-black">Up next:</h2>
         <div className="bg-beige/70 rounded-3xl px-6 py-5 mb-10 shadow-sm w-4/5">
           <p className="text-ink-black text-lg font-semibold text-center">
-            {UP_NEXT.title} - {UP_NEXT.duration}
+            {loading
+              ? "Loading..."
+              : upNext
+              ? formatEvent(upNext)
+              : "No upcoming events"}
           </p>
         </div>
 
