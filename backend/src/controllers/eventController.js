@@ -144,3 +144,59 @@ exports.getCurrentAndNext = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// Get segments for an event
+exports.getSegments = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM event_segments 
+       WHERE event_id = $1 
+       ORDER BY order_index ASC`,
+      [req.params.id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error("getSegments error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Add segment to event (admin only)
+exports.createSegment = async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+  const { title, duration_minutes, assigned_team, notes, order_index } = req.body;
+  if (!title || !duration_minutes) {
+    return res.status(400).json({ message: "Title and duration are required" });
+  }
+  try {
+    const result = await pool.query(
+      `INSERT INTO event_segments (event_id, title, duration_minutes, assigned_team, notes, order_index)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING *`,
+      [req.params.id, title, duration_minutes, assigned_team, notes, order_index || 0]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    console.error("createSegment error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Delete segment (admin only)
+exports.deleteSegment = async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+  try {
+    await pool.query(
+      "DELETE FROM event_segments WHERE id = $1",
+      [req.params.segmentId]
+    );
+    res.json({ message: "Segment deleted" });
+  } catch (err) {
+    console.error("deleteSegment error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};

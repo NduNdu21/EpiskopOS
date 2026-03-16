@@ -9,6 +9,9 @@ const {
   assignVolunteer,
   getMyEvents,
   getCurrentAndNext,
+  getSegments,
+  createSegment,
+  deleteSegment,
 } = require("../controllers/eventController");
 
 // All routes require login
@@ -21,4 +24,7 @@ router.put("/:id", updateEvent);                      // admin
 router.delete("/:id", deleteEvent);                   // admin
 router.post("/:id/assign", assignVolunteer);          // admin
 router.get("/current", getCurrentAndNext);            // all users
+router.get("/:id/segments", getSegments);             // all users
+router.post("/:id/segments", createSegment);          // admin
+router.delete("/:id/segments/:segmentId", deleteSegment);  // admin
 module.exports = router;
