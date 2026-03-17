@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import HomePage from './pages/HomePage';
 import ProtectedRoute from "./components/ProtectedRoute";
 import Events from "./pages/Events";
+import EventSegment from "./pages/EventSegment";
 
 function App() {
 
@@ -18,6 +19,11 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/events" element={
           <ProtectedRoute><Events /></ProtectedRoute>
+        } />
+        <Route path="/events/:id" element={
+          <ProtectedRoute>
+            <EventSegment />
+          </ProtectedRoute>
         } />
       </Routes>
     </BrowserRouter>
