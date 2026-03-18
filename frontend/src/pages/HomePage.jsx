@@ -41,13 +41,22 @@ const HomePage = () => {
 
   // Helper to format event display
   const formatEvent = (event) => {
-    if (!event) return null;
-    const date = new Date(event.event_date);
-    const now = new Date();
-    const diffMs = date - now;
-    const diffMins = Math.round(Math.abs(diffMs) / 60000);
-    return `${event.title} - ${diffMins} min`;
-  };
+  if (!event) return null;
+  const date = new Date(event.event_date);
+  const now = new Date();
+  const diffMs = date - now;
+  const diffHours = Math.round(diffMs / 3600000);
+  const diffDays = Math.round(diffMs / 86400000);
+
+  let timeLabel;
+  if (diffDays >= 1) {
+    timeLabel = `${diffDays} day${diffDays !== 1 ? "s" : ""}`;
+  } else {
+    timeLabel = `${diffHours} hour${diffHours !== 1 ? "s" : ""}`;
+  }
+
+  return `${event.title} - ${timeLabel}`;
+};
 
   return (
     <div className="min-h-screen bg-ash-grey flex flex-col">
