@@ -6,6 +6,7 @@ import HomePage from './pages/HomePage';
 import ProtectedRoute from "./components/ProtectedRoute";
 import Events from "./pages/Events";
 import EventSegment from "./pages/EventSegment";
+import Messages from "./pages/Messages";
 
 function App() {
 
@@ -25,6 +26,7 @@ function App() {
             <EventSegment />
           </ProtectedRoute>
         } />
+        <Route path="/messages" element={<Messages />} />
       </Routes>
     </BrowserRouter>
   )

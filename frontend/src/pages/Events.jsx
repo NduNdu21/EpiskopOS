@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Menu, ChevronLeft, ChevronRight, Plus, Home, Film, MessageSquare, Users } from "lucide-react";
 import { getEvents, createEvent } from "../api";
-import { Sidebar } from "../components/Sidebar";
+import Sidebar  from "../components/Sidebar";
 
 // Helper: get the Monday of the week containing a given date
 const getWeekStart = (date) => {
@@ -165,11 +165,6 @@ const Events = () => {
                     <Menu size={26} />
                 </button>
                 <h1 className="text-lg font-bold text-ink-black">EpiskopOS</h1>
-                <div className="w-9 h-9 rounded-full bg-dark-teal flex items-center justify-center">
-                    <span className="text-white text-sm font-bold">
-                        {localStorage.getItem("name")?.slice(0, 2).toUpperCase() || "?"}
-                    </span>
-                </div>
             </div>
 
             {/* Calendar Strip */}

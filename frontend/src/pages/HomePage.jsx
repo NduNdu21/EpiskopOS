@@ -20,7 +20,7 @@ const NAV_ITEMS = [
 
 const HomePage = () => {
   const location = useLocation();
-  const name = localStorage.getItem("name") || "Ndumiso";
+  const name = localStorage.getItem("name");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [onNow, setOnNow] = useState(null);
   const [upNext, setUpNext] = useState(null);
