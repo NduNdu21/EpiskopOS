@@ -2,14 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Home, Film, MessageSquare, Users, Menu } from "lucide-react";
 import Sidebar from "../components/Sidebar";
-import { getCurrentAndNext } from "../api";
-
-//Mock data
-const UPDATES = [
-  { team: "Sound team", message: "Can we get the drums higher please!!" },
-  { team: "Projection team", message: "Lyrics on the board are slow" },
-  { team: "Pastor", message: "Are the message slides ready?" },
-];
+import { getCurrentAndNext, getMe } from "../api";
 
 const NAV_ITEMS = [
   { label: "Home", icon: Home, path: "/" },
@@ -18,114 +11,141 @@ const NAV_ITEMS = [
   { label: "Members", icon: Users, path: "/members" },
 ];
 
+// Formats event_date + start_time into "Sun 22 Mar · 10:00am"
+const formatServiceDate = (event) => {
+  if (!event) return null;
+  const date = new Date(event.event_date);
+  const dayName = date.toLocaleDateString("en-GB", { weekday: "short" });
+  const day = date.getDate();
+  const month = date.toLocaleDateString("en-GB", { month: "short" });
+
+  let timeStr = "";
+  if (event.start_time) {
+    const [h, m] = event.start_time.split(":").map(Number);
+    const suffix = h >= 12 ? "pm" : "am";
+    const hour = h % 12 === 0 ? 12 : h % 12;
+    timeStr = ` · ${hour}:${String(m).padStart(2, "0")}${suffix}`;
+  }
+
+  return `${dayName} ${day} ${month}${timeStr}`;
+};
+
+// Capitalises first letter of a string
+const capitalise = (str = "") =>
+  str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+
 const HomePage = () => {
   const location = useLocation();
-  const name = localStorage.getItem("name");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [onNow, setOnNow] = useState(null);
+
+  const [user, setUser] = useState(null);
   const [upNext, setUpNext] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getCurrentAndNext()
-      .then((data) => {
-        setOnNow(data.onNow);
-        setUpNext(data.upNext);
+    Promise.all([getMe(), getCurrentAndNext()])
+      .then(([userData, eventData]) => {
+        setUser(userData);
+        setUpNext(eventData.upNext);
       })
-      .catch(() => {
-        setOnNow(null);
-        setUpNext(null);
-      })
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  // Helper to format event display
-  const formatEvent = (event) => {
-  if (!event) return null;
-  const date = new Date(event.event_date);
-  const now = new Date();
-  const diffMs = date - now;
-  const diffHours = Math.round(diffMs / 3600000);
-  const diffDays = Math.round(diffMs / 86400000);
-
-  let timeLabel;
-  if (diffDays >= 1) {
-    timeLabel = `${diffDays} day${diffDays !== 1 ? "s" : ""}`;
-  } else {
-    timeLabel = `${diffHours} hour${diffHours !== 1 ? "s" : ""}`;
-  }
-
-  return `${event.title} - ${timeLabel}`;
-};
+  const firstName = user?.name?.trim().split(/\s+/)[0];
 
   return (
     <div className="min-h-screen bg-ash-grey flex flex-col">
-
-      <Sidebar
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-      />
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Top Bar */}
       <div className="flex items-center justify-between px-6 pt-6 pb-2">
         <button className="text-ink-black" onClick={() => setSidebarOpen(true)}>
           <Menu size={28} />
         </button>
-        <h2 className="text-lg font-semibold text-ink-black">Summary</h2>
+        <h2 className="text-lg font-semibold text-ink-black">EpiskopOS</h2>
         <div className="w-7"></div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 px-6 pt-6 pb-20 overflow-y-auto">
-        <h1 className="text-4xl font-light text-ink-black mb-8">
-          Hello {name}
-        </h1>
+      <div className="flex-1 px-6 pt-6 pb-24 overflow-y-auto space-y-6">
 
-        <h2 className="text-2xl font-light text-ink-black">On now:</h2>
-        <div className="bg-beige rounded-2xl px-6 py-5 mb-6 shadow-sm">
-          <p className="text-ink-black text-lg font-semibold text-center">
-            {loading
-              ? "Loading..."
-              : onNow
-              ? formatEvent(onNow)
-              : "Nothing on right now"}
-          </p>
+        {/* Greeting + role badge */}
+        <div>
+          <h1 className="text-4xl font-bold text-ink-black">
+            Hello {firstName}
+          </h1>
+          {user?.role && (
+            <span className="inline-block mt-2 px-3 py-1 rounded-full bg-dark-teal text-beige text-xs font-medium tracking-wide">
+              {capitalise(user.role)}
+            </span>
+          )}
         </div>
 
-        <h2 className="text-xl font-light text-ink-black">Up next:</h2>
-        <div className="bg-beige/70 rounded-3xl px-6 py-5 mb-10 shadow-sm w-4/5">
-          <p className="text-ink-black text-lg font-semibold text-center">
-            {loading
-              ? "Loading..."
-              : upNext
-              ? formatEvent(upNext)
-              : "No upcoming events"}
+        {/* Next Service card */}
+        <div className="bg-white/70 rounded-2xl px-5 py-4 shadow-sm">
+          <p className="text-xs font-semibold text-ink-black/50 uppercase tracking-widest mb-1">
+            Next Service
           </p>
+          {loading ? (
+            <p className="text-ink-black text-lg font-semibold">Loading...</p>
+          ) : upNext ? (
+            <>
+              <p className="text-ink-black text-xl font-bold">{upNext.title}</p>
+              <p className="text-ink-black/60 text-sm mt-0.5">
+                {formatServiceDate(upNext)}
+              </p>
+            </>
+          ) : (
+            <p className="text-ink-black/60 text-sm">No upcoming services</p>
+          )}
         </div>
 
-        <div className="bg-white rounded-3xl px-6 py-5 shadow-sm">
-          <h3 className="text-xl font-semibold text-ink-black mb-3">
-            Lastest Updates:
-          </h3>
-          <div className="divide-y divide-gray-200">
-            {UPDATES.map((update, index) => (
-              <div
-                key={index}
-                className="flex items-center justify-between py-4"
-              >
-                <div>
-                  <p className="text-ink-black font-semibold text-sm">
-                    {update.team}
-                  </p>
-                  <p className="text-gray-500 text-sm mt-0.5">
-                    {update.message}
-                  </p>
-                </div>
-                <div className="w-4 h-4 rounded-full bg-gray-300 ml-4 flex-shrink-0" />
+        {/* Your Assignment card */}
+        <div className="bg-white/70 rounded-2xl px-5 py-4 shadow-sm">
+          <p className="text-xs font-semibold text-ink-black/50 uppercase tracking-widest mb-1">
+            Your Assignment
+          </p>
+          {loading ? (
+            <p className="text-ink-black text-lg font-semibold">Loading...</p>
+          ) : user?.team ? (
+            <>
+              <p className="text-ink-black text-xl font-bold">
+                {capitalise(user.team)} Team
+              </p>
+              <p className="text-ink-black/60 text-sm mt-0.5">
+                {capitalise(user.role)}
+              </p>
+            </>
+          ) : (
+            <p className="text-ink-black/60 text-sm">No assignment yet</p>
+          )}
+        </div>
+
+        {/* Messages card */}
+        <Link to="/messages">
+          <div className="bg-white rounded-2xl px-5 py-4 shadow-sm flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-ink-black/50 uppercase tracking-widest mb-1">
+                Messages
+              </p>
+              <p className="text-ink-black text-lg font-semibold">
+                {loading
+                  ? "Loading..."
+                  : user?.unread_count > 0
+                  ? `${user.unread_count} unread`
+                  : "All caught up"}
+              </p>
+            </div>
+            {!loading && user?.unread_count > 0 && (
+              <div className="w-9 h-9 rounded-full bg-dark-teal flex items-center justify-center flex-shrink-0">
+                <span className="text-beige text-sm font-bold">
+                  {user.unread_count}
+                </span>
               </div>
-            ))}
+            )}
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* Nav bar bottom */}
