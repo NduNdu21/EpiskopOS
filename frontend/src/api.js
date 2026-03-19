@@ -17,7 +17,6 @@ async function handleResponse(res) {
 }
 
 //Users
-
 export const registerUser = async (data) => {
     const response = await fetch(`${API_BASE}/auth/register`, {
         method: "POST",
@@ -49,6 +48,14 @@ export const getProtectedData = async () => {
   const token = localStorage.getItem("token");
   const res = await fetch(`${API_BASE}/test/protected`, {
     headers: { Authorization: token ? `Bearer ${token}` : "" },
+  });
+  return handleResponse(res);
+};
+
+export const getMe = async () => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_BASE}/users/me`, {
+    headers: { Authorization: `Bearer ${token}` },
   });
   return handleResponse(res);
 };
@@ -156,16 +163,6 @@ export const deleteSegment = async (eventId, segmentId) => {
   const token = localStorage.getItem("token");
   const res = await fetch(`${API_BASE}/events/${eventId}/segments/${segmentId}`, {
     method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return handleResponse(res);
-};
-
-
-//Users
-export const getMe = async () => {
-  const token = localStorage.getItem("token");
-  const res = await fetch(`${API_BASE}/users/me`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return handleResponse(res);
