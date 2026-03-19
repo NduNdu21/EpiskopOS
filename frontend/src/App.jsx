@@ -7,6 +7,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Events from "./pages/Events";
 import EventSegment from "./pages/EventSegment";
 import Messages from "./pages/Messages";
+import Members from './pages/Members';
 
 function App() {
 
@@ -27,6 +28,7 @@ function App() {
           </ProtectedRoute>
         } />
         <Route path="/messages" element={<Messages />} />
+        <Route path="/members" element={<Members />} />
       </Routes>
     </BrowserRouter>
   )
