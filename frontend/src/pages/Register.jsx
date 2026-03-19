@@ -4,45 +4,103 @@ import { useState } from "react";
 import { registerUser } from "../api";
 import { Link, useNavigate } from "react-router-dom";
 
+const ROLES = ["volunteer", "lighting", "sound", "media", "instrumentalists"];
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const validate = (form) => {
+  const errors = {};
+
+  // Full name: must have at least two words
+  const nameParts = form.name.trim().split(/\s+/);
+  if (!form.name.trim()) {
+    errors.name = "Full name is required.";
+  } else if (nameParts.length < 2) {
+    errors.name = "Please enter your first and last name.";
+  }
+
+  // Email
+  if (!form.email.trim()) {
+    errors.email = "Email is required.";
+  } else if (!emailRegex.test(form.email)) {
+    errors.email = "Please enter a valid email address.";
+  }
+
+  // Password
+  if (!form.password) {
+    errors.password = "Password is required.";
+  } else if (form.password.length < 8) {
+    errors.password = "Password must be at least 8 characters.";
+  }
+
+  // Confirm password
+  if (!form.confirmPassword) {
+    errors.confirmPassword = "Please confirm your password.";
+  } else if (form.password !== form.confirmPassword) {
+    errors.confirmPassword = "Passwords do not match.";
+  }
+
+  // Role
+  if (!form.role) {
+    errors.role = "Please select a role.";
+  }
+
+  return errors;
+};
+
+const FieldError = ({ message }) =>
+  message ? (
+    <p className="text-red-300 text-xs mt-1 pl-1">{message}</p>
+  ) : null;
+
 const Register = () => {
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "", role: "" });
+  const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [serverError, setServerError] = useState("");
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }))
+    // Clear the error for this field as the user types
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+    setServerError("");
 
-
-    // Simple client-side checks
-    if (!form.email || !form.password || !form.name) {
-      setError("Please fill in name, email, and password.");
+    // Error handling
+    const errors = validate(form);
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
-    if (!form.role) {
-      setError("Please select a role.");
-      return;
-    }
-
 
     try {
       setLoading(true);
-      const data = await registerUser(form);
+      // Strip confirmPassword before sending to API
+      const { confirmPassword: _confirmPassword, ...payload } = form;
+      const data = await registerUser(payload);
       alert(data?.message || "Registered successfully.");
       navigate("/login");
     } catch (err) {
-      setError(err?.message || "Registration failed.");
+      setServerError(err?.message || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
-
   };
+
+  //Styling for all input fields 
+  const inputClass = (field) =>
+    `w-full px-6 py-4 rounded-2xl text-beige text-lg placeholder-beige/70 outline-none bg-white/15 border transition-colors ${
+      fieldErrors[field]
+        ? "border-red-400"
+        : "border-beige/60 focus:border-beige"
+    }`;
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-b from-dark-teal to-ash-grey">
@@ -53,46 +111,71 @@ const Register = () => {
           <p className="text-beige text-lg mt-2 opacity-80">an Overseer</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4" noValidate>
           <h2 className="text-xl mb-2 font-semibold text-beige">Register</h2>
 
-          {/* Name */}
+          {/* Full Name */}
           <div className="flex flex-col gap-1">
-            <label className="sr-only" htmlFor="name" >Name</label>
+            <label className="sr-only" htmlFor="name">Full Name</label>
             <input
+              id="name"
               name="name"
               type="text"
               value={form.name}
-              placeholder="Name"
+              placeholder="Full Name"
               onChange={handleChange}
-              className="w-full px-6 py-4 rounded-2xl text-beige text-lg placeholder-beige/70 outline-none bg-white/15 border border-beige/60"
+              autoComplete="name"
+              className={inputClass("name")}
             />
+            <FieldError message={fieldErrors.name} />
           </div>
 
           {/* Email */}
           <div className="flex flex-col gap-1">
             <label className="sr-only" htmlFor="email">Email</label>
             <input
+              id="email"
               name="email"
               type="email"
               value={form.email}
               placeholder="example@email.com"
               onChange={handleChange}
-              className="w-full px-6 py-4 rounded-2xl text-beige text-lg placeholder-beige/70 outline-none bg-white/15 border border-beige/60"
+              autoComplete="email"
+              className={inputClass("email")}
             />
+            <FieldError message={fieldErrors.email} />
           </div>
 
           {/* Password */}
           <div className="flex flex-col gap-1">
             <label className="sr-only" htmlFor="password">Password</label>
             <input
+              id="password"
               name="password"
               type="password"
               value={form.password}
-              placeholder="Enter password"
+              placeholder="Password (min. 8 characters)"
               onChange={handleChange}
-              className="w-full px-6 py-4 rounded-2xl text-beige text-lg placeholder-beige/70 outline-none bg-white/15 border border-beige/60"
+              autoComplete="new-password"
+              className={inputClass("password")}
             />
+            <FieldError message={fieldErrors.password} />
+          </div>
+
+          {/* Confirm Password */}
+          <div className="flex flex-col gap-1">
+            <label className="sr-only" htmlFor="confirmPassword">Confirm Password</label>
+            <input
+              id="confirmPassword"
+              name="confirmPassword"
+              type="password"
+              value={form.confirmPassword}
+              placeholder="Confirm password"
+              onChange={handleChange}
+              autoComplete="new-password"
+              className={inputClass("confirmPassword")}
+            />
+            <FieldError message={fieldErrors.confirmPassword} />
           </div>
 
           {/* Role */}
@@ -103,20 +186,24 @@ const Register = () => {
               name="role"
               value={form.role}
               onChange={handleChange}
-              className="w-full px-6 py-4 rounded-2xl text-beige text-lg outline-none bg-white/15 border border-beige/60"
+              className={`${inputClass("role")} appearance-none`}
             >
-              {["admin", "volunteer", "lighting", "sound", "media", "instrumentalists"].map((r) => (
-                <option key={r} value={r} className="text-ink-black bg-beige">
-                  <span className="capitalize">{r}</span>
+              <option value="" disabled className="text-ink-black bg-beige">
+                Select your role
+              </option>
+              {ROLES.map((r) => (
+                <option key={r} value={r} className="text-ink-black bg-beige capitalize">
+                  {r.charAt(0).toUpperCase() + r.slice(1)}
                 </option>
               ))}
             </select>
+            <FieldError message={fieldErrors.role} />
           </div>
 
-          {/* Error display */}
-          {error && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2">
-              {error}
+          {/* Server error */}
+          {serverError && (
+            <p className="text-sm text-red-300 bg-red-900/30 border border-red-400/40 rounded-xl px-4 py-3">
+              {serverError}
             </p>
           )}
 
