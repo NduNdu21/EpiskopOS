@@ -2,22 +2,53 @@ import { useState } from "react";
 import { loginUser } from "../api";
 import { Link, useNavigate } from "react-router-dom";
 
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const validate = (form) => {
+  const errors = {};
+
+  if (!form.email.trim()) {
+    errors.email = "Email is required.";
+  } else if (!emailRegex.test(form.email)) {
+    errors.email = "Please enter a valid email address.";
+  }
+
+  if (!form.password) {
+    errors.password = "Password is required.";
+  } else if (form.password.length < 8) {
+    errors.password = "Password must be at least 8 characters.";
+  }
+
+  return errors;
+};
+
+const FieldError = ({ message }) =>
+  message ? (
+    <p className="text-red-300 text-xs mt-2 pl-1">{message}</p>
+  ) : null;
+
 const Login = () => {
   const [form, setForm] = useState({ email: "", password: "" });
-  const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [serverError, setServerError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+    setServerError("");
 
-    if (!form.email || !form.password) {
-      setError("Email and password are required.");
+    const errors = validate(form);
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
 
@@ -33,7 +64,7 @@ const Login = () => {
         navigate("/");
       }
     } catch (err) {
-      setError(err.message || "Login failed.");
+      setServerError(err.message || "Login failed.");
     } finally {
       setLoading(false);
     }
@@ -48,36 +79,51 @@ const Login = () => {
           <p className="text-beige text-lg mt-2 opacity-80">an Overseer</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 rounded w-full flex flex-col">
+        <form onSubmit={handleSubmit} className="p-6 rounded w-full flex flex-col" noValidate>
           <h2 className="text-xl mb-4 font-semibold text-beige">Login</h2>
 
-          <div className="w-full rounded-3xl overflow-hidden mb-10 border border-beige/60">
-            {/*<label className="text-sm font-medium text-beige">Email</label>*/}
+          {/* Email */}
+          <div className="flex flex-col gap-1 mb-4">
+            <label className="sr-only" htmlFor="email">Email</label>
             <input
+              id="email"
               name="email"
               type="email"
               placeholder="You@example.com"
               value={form.email}
               onChange={handleChange}
-              className="w-full px-6 py-5 text-beige text-lg placeholder-beige/70 outline-none bg-white/15 border-b border-beige/60"
+              autoComplete="email"
+              className={`w-full px-6 py-4 rounded-2xl text-beige text-lg placeholder-beige/70 outline-none bg-white/15 border transition-colors ${
+                fieldErrors.email ? "border-red-400" : "border-beige/60 focus:border-beige"
+              }`}
             />
+            <FieldError message={fieldErrors.email} />
+          </div>
 
-            {/*<label className="text-sm font-medium text-beige">Password</label>*/}
+          {/* Password */}
+          <div className="flex flex-col gap-1 mb-4">
+            <label className="sr-only" htmlFor="password">Password</label>
             <input
+              id="password"
               name="password"
               type="password"
               placeholder="Password"
               value={form.password}
               onChange={handleChange}
-              className="w-full px-6 py-5 text-beige text-lg placeholder-beige/70 outline-none bg-white/15"
+              autoComplete="current-password"
+              className={`w-full px-6 py-4 rounded-2xl text-beige text-lg placeholder-beige/70 outline-none bg-white/15 border transition-colors ${
+                fieldErrors.password ? "border-red-400" : "border-beige/60 focus:border-beige"
+              }`}
             />
+            <FieldError message={fieldErrors.password} />
           </div>
-
-          {error && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-2 mb-3">
-              {error}
+ 
+          {serverError && (
+            <p className="text-sm text-red-300 bg-red-900/30 border border-red-400/40 rounded-xl px-4 py-3 mt-3">
+              {serverError}
             </p>
           )}
+
 
           <button
             type="submit"
