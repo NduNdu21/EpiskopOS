@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Menu, ChevronLeft, ChevronRight, Plus, Home, Film, MessageSquare, Users } from "lucide-react";
 import { getEvents, createEvent } from "../api";
+import { Sidebar } from "../components/Sidebar";
 
 // Helper: get the Monday of the week containing a given date
 const getWeekStart = (date) => {
@@ -40,6 +41,7 @@ const Events = () => {
     const navigate = useNavigate();
     const role = localStorage.getItem("role");
     const isAdmin = role === "admin";
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -151,9 +153,15 @@ const Events = () => {
 
     return (
         <div className="min-h-screen bg-beige flex flex-col">
+
+            <Sidebar
+                isOpen={sidebarOpen}
+                onClose={() => setSidebarOpen(false)}
+            />
+
             {/* Top Bar */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4">
-                <button className="text-ink-black">
+                <button className="text-ink-black" onClick={() => setSidebarOpen(true)}>
                     <Menu size={26} />
                 </button>
                 <h1 className="text-lg font-bold text-ink-black">EpiskopOS</h1>
@@ -195,7 +203,7 @@ const Events = () => {
                                     : isToday(date)
                                         ? "bg-ash-grey/40 text-ink-black"
                                         : "text-ink-black"
-                                    }`}>
+                                }`}>
                                 {date.getDate()}
                             </div>
                             {/* Dot for days with events */}
