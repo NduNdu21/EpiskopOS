@@ -7,7 +7,6 @@ const {
   updateEvent,
   deleteEvent,
   assignVolunteer,
-  getMyEvents,
   getCurrentAndNext,
   getSegments,
   createSegment,
@@ -18,7 +17,6 @@ const {
 router.use(authMiddleware);
 
 router.get("/", getEvents);                           // all users
-router.get("/my", getMyEvents);                       // volunteers
 router.post("/", createEvent);                        // admin
 router.put("/:id", updateEvent);                      // admin
 router.delete("/:id", deleteEvent);                   // admin
