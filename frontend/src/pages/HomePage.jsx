@@ -48,7 +48,7 @@ const HomePage = () => {
         setUser(userData);
         setUpNext(eventData.upNext);
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, []);
 
@@ -68,7 +68,7 @@ const HomePage = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 px-6 pt-6 pb-24 overflow-y-auto space-y-6">
+      <div className="flex-1 px-6 pt-6 pb-24 overflow-y-auto space-y-3">
 
         {/* Greeting + role badge */}
         <div>
@@ -108,22 +108,22 @@ const HomePage = () => {
           </p>
           {loading ? (
             <p className="text-ink-black text-lg font-semibold">Loading...</p>
-          ) : user?.team ? (
+          ) : user?.role && user.role !== "volunteer" ? (
             <>
               <p className="text-ink-black text-xl font-bold">
-                {capitalise(user.team)} Team
+                {capitalise(user.role)} Team
               </p>
               <p className="text-ink-black/60 text-sm mt-0.5">
-                {capitalise(user.role)}
+                {capitalise(user.role)} team member
               </p>
             </>
           ) : (
-            <p className="text-ink-black/60 text-sm">No assignment yet</p>
+            <p className="text-ink-black/60 text-sm mt-0.5">No assignment yet</p>
           )}
         </div>
 
         {/* Messages card */}
-        <Link to="/messages">
+        <Link to="/messages" className="block mt-1">
           <div className="bg-white rounded-2xl px-5 py-4 shadow-sm flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold text-ink-black/50 uppercase tracking-widest mb-1">
@@ -133,8 +133,8 @@ const HomePage = () => {
                 {loading
                   ? "Loading..."
                   : user?.unread_count > 0
-                  ? `${user.unread_count} unread`
-                  : "All caught up"}
+                    ? `${user.unread_count} unread`
+                    : "All caught up"}
               </p>
             </div>
             {!loading && user?.unread_count > 0 && (
@@ -156,9 +156,8 @@ const HomePage = () => {
             <Link
               key={label}
               to={path}
-              className={`flex flex-col items-center gap-1 ${
-                isActive ? "text-dark-teal" : "text-ink-black"
-              }`}
+              className={`flex flex-col items-center gap-1 ${isActive ? "text-dark-teal" : "text-ink-black"
+                }`}
             >
               <Icon size={26} strokeWidth={isActive ? 2.5 : 1.5} />
               <span className="text-xs font-medium">{label}</span>
