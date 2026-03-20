@@ -127,7 +127,7 @@ const EventSegment = () => {
                     </h2>
                     <p className="text-white/70 text-sm mb-4">
                         {formatDate(event.event_date)} · {formatTime(event.event_date)}
-                        {event.duration_minutes ? ` · ${event.duration_minutes} min` : ""}
+                        {event.duration_hours ? ` · ${event.duration_hours} hr` : ""}
                     </p>
 
                     {/* Team tags */}

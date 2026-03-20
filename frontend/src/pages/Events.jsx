@@ -64,7 +64,7 @@ const toDateTimeLocal = (dateStr) => {
 
 const EMPTY_FORM = {
     title: "", description: "", event_date: "",
-    location: "", duration_minutes: "", priority: "medium"
+    location: "", duration_hours: "", priority: "medium"
 };
 
 const Events = () => {
@@ -153,12 +153,12 @@ const Events = () => {
         e.stopPropagation(); // prevent navigating to event detail
         setEditingEvent(event);
         setEditForm({
-            title: event.title || "",
-            description: event.description || "",
+            title: event.title,
+            description: event.description,
             event_date: toDateTimeLocal(event.event_date),
-            location: event.location || "",
-            duration_minutes: event.duration_minutes || "",
-            priority: event.priority || "medium",
+            location: event.location,
+            duration_hours: event.duration_hours,
+            priority: event.priority,
         });
         setEditError("");
     };
@@ -273,11 +273,11 @@ const Events = () => {
                 className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
             />
             <input
-                name="duration_minutes"
+                name="duration_hours"
                 type="number"
-                value={values.duration_minutes}
+                value={values.duration_hours}
                 onChange={onChange}
-                placeholder="Duration in minutes (optional)"
+                placeholder="Duration in hours (optional)"
                 className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
             />
             <textarea
@@ -370,7 +370,7 @@ const Events = () => {
                                         >
                                             <p className={`text-sm mb-1 ${prioritySubTextClass(event.priority)}`}>
                                                 {formatTime(event.event_date)}
-                                                {event.duration_minutes ? ` · ${event.duration_minutes} min` : ""}
+                                                {event.duration_hours ? ` · ${event.duration_hours} hr` : ""}
                                             </p>
                                             <h3 className="font-bold text-lg leading-tight pr-8">{event.title}</h3>
                                             {event.description && (
