@@ -20,7 +20,6 @@ router.get("/", getEvents);                           // all users
 router.post("/", createEvent);                        // admin
 router.put("/:id", updateEvent);                      // admin
 router.delete("/:id", deleteEvent);                   // admin
-router.post("/:id/assign", assignVolunteer);          // admin
 router.get("/current", getCurrentAndNext);            // all users
 router.get("/:id/segments", getSegments);             // all users
 router.post("/:id/segments", createSegment);          // admin
