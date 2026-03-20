@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { Menu, ChevronLeft, ChevronRight, Plus, Home, Film, MessageSquare, Users } from "lucide-react";
-import { getEvents, createEvent } from "../api";
+import { useNavigate, Link, useLocation } from "react-router-dom";
+import { Menu, ChevronLeft, ChevronRight, Plus, Home, Film, MessageSquare, Users, Pencil } from "lucide-react";
+import { getEvents, createEvent, updateEvent } from "../api";
 import Sidebar  from "../components/Sidebar";
 
 // Helper: get the Monday of the week containing a given date
@@ -37,8 +37,39 @@ const NAV_ITEMS = [
     { label: "Members", icon: Users, path: "/members" },
 ];
 
+//Prioririties for events
+const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 };
+const PRIORITY_LABELS = ["high", "medium", "low"];
+
+const priorityCardClass = (priority) => {
+    switch (priority) {
+        case "high":   return "bg-dark-teal text-white";
+        case "medium": return "bg-ash-grey/40 text-ink-black";
+        case "low":    return "bg-white text-ink-black";
+        default:       return "bg-ash-grey/40 text-ink-black";
+    }
+};
+
+const prioritySubTextClass = (priority) => {
+    return priority === "high" ? "text-white/70" : "text-gray-500";
+};
+
+// Converts a JS Date or ISO string to the format required by datetime-local input
+const toDateTimeLocal = (dateStr) => {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
+const EMPTY_FORM = {
+    title: "", description: "", event_date: "",
+    location: "", duration_minutes: "", priority: "medium"
+};
+
 const Events = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const role = localStorage.getItem("role");
     const isAdmin = role === "admin";
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -48,13 +79,17 @@ const Events = () => {
     const [weekStart, setWeekStart] = useState(getWeekStart(new Date()));
     const [selectedDate, setSelectedDate] = useState(new Date());
 
-    // Create event form
+    // Create event modal
     const [showForm, setShowForm] = useState(false);
-    const [form, setForm] = useState({
-        title: "", description: "", event_date: "", location: "", duration_minutes: ""
-    });
+    const [form, setForm] = useState(EMPTY_FORM);
     const [formLoading, setFormLoading] = useState(false);
     const [formError, setFormError] = useState("");
+
+    // Edit event modal
+    const [editingEvent, setEditingEvent] = useState(null);
+    const [editForm, setEditForm] = useState(EMPTY_FORM);
+    const [editLoading, setEditLoading] = useState(false);
+    const [editError, setEditError] = useState("");
 
     useEffect(() => {
         fetchEvents();
@@ -95,12 +130,37 @@ const Events = () => {
     }, {});
 
     // Get dates that have events this week
-    const weekDatesWithEvents = weekDays
-        .map((d) => d.toDateString())
-        .filter((dateStr) => eventsByDate[dateStr]);
+    Object.keys(eventsByDate).forEach((dateKey) => {
+        eventsByDate[dateKey].sort((a, b) => {
+            const priorityDiff =
+                (PRIORITY_ORDER[a.priority] ?? 1) - (PRIORITY_ORDER[b.priority] ?? 1);
+            if (priorityDiff !== 0) return priorityDiff;
+            return new Date(a.event_date) - new Date(b.event_date);
+        });
+    });
+
+    const weekDatesWithEvents = weekDays.map((d) => d.toDateString()).filter((dateStr) => eventsByDate[dateStr]);
 
     const handleFormChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
+    };
+
+    const handleEditFormChange = (e) => {
+        setEditForm({ ...editForm, [e.target.name]: e.target.value });
+    };
+
+    const openEditModal = (e, event) => {
+        e.stopPropagation(); // prevent navigating to event detail
+        setEditingEvent(event);
+        setEditForm({
+            title: event.title || "",
+            description: event.description || "",
+            event_date: toDateTimeLocal(event.event_date),
+            location: event.location || "",
+            duration_minutes: event.duration_minutes || "",
+            priority: event.priority || "medium",
+        });
+        setEditError("");
     };
 
     const handleCreateEvent = async (e) => {
@@ -113,13 +173,32 @@ const Events = () => {
         try {
             setFormLoading(true);
             await createEvent(form);
-            setForm({ title: "", description: "", event_date: "", location: "", duration_minutes: "" });
+            setForm(EMPTY_FORM);
             setShowForm(false);
             fetchEvents();
         } catch (err) {
             setFormError(err.message || "Failed to create event.");
         } finally {
             setFormLoading(false);
+        }
+    };
+
+    const handleUpdateEvent = async (e) => {
+        e.preventDefault();
+        setEditError("");
+        if (!editForm.title || !editForm.event_date) {
+            setEditError("Title and date are required.");
+            return;
+        }
+        try {
+            setEditLoading(true);
+            await updateEvent(editingEvent.id, editForm);
+            setEditingEvent(null);
+            fetchEvents();
+        } catch (err) {
+            setEditError(err.message || "Failed to update event.");
+        } finally {
+            setEditLoading(false);
         }
     };
 
@@ -135,29 +214,88 @@ const Events = () => {
         return d.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" });
     };
 
-    const isToday = (date) => {
-        const today = new Date();
-        return date.toDateString() === today.toDateString();
-    };
-
-    const isSelected = (date) => {
-        return date.toDateString() === selectedDate.toDateString();
-    };
-
-    const hasEvents = (date) => {
-        return !!eventsByDate[date.toDateString()];
-    };
+    const isToday = (date) => date.toDateString() === new Date().toDateString();
+    const isSelected = (date) => date.toDateString() === selectedDate.toDateString();
+    const hasEvents = (date) => !!eventsByDate[date.toDateString()];
 
     // Month label for the week displayed
     const monthLabel = `${MONTH_NAMES[weekStart.getMonth()]} ${weekStart.getFullYear()}`;
 
+    // Reusable priority picker used in both modals
+    const PriorityPicker = ({ value, onChange }) => (
+        <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-ink-black/70 pl-1">Priority</label>
+            <div className="flex gap-2">
+                {PRIORITY_LABELS.map((p) => (
+                    <button
+                        key={p}
+                        type="button"
+                        onClick={() => onChange(p)}
+                        className={`flex-1 py-2 rounded-xl text-sm font-medium capitalize border transition-colors ${
+                            value === p
+                                ? p === "high"
+                                    ? "bg-dark-teal text-white border-dark-teal"
+                                    : p === "medium"
+                                        ? "bg-ash-grey/60 text-ink-black border-ash-grey"
+                                        : "bg-white text-ink-black border-gray-300 shadow-sm"
+                                : "bg-gray-50 text-gray-400 border-gray-200"
+                        }`}
+                    >
+                        {p}
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+
+    // Shared modal form fields to avoid duplication
+    const EventFormFields = ({ values, onChange, onPriorityChange }) => (
+        <>
+            <input
+                name="title"
+                value={values.title}
+                onChange={onChange}
+                placeholder="Event title"
+                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
+            />
+            <input
+                name="location"
+                value={values.location}
+                onChange={onChange}
+                placeholder="Location (optional)"
+                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
+            />
+            <input
+                name="event_date"
+                type="datetime-local"
+                value={values.event_date}
+                onChange={onChange}
+                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
+            />
+            <input
+                name="duration_minutes"
+                type="number"
+                value={values.duration_minutes}
+                onChange={onChange}
+                placeholder="Duration in minutes (optional)"
+                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
+            />
+            <textarea
+                name="description"
+                value={values.description}
+                onChange={onChange}
+                placeholder="Description (optional)"
+                rows={3}
+                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal resize-none"
+            />
+            <PriorityPicker value={values.priority} onChange={onPriorityChange} />
+        </>
+    );
+
     return (
         <div className="min-h-screen bg-beige flex flex-col">
 
-            <Sidebar
-                isOpen={sidebarOpen}
-                onClose={() => setSidebarOpen(false)}
-            />
+            <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
             {/* Top Bar */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4">
@@ -165,6 +303,7 @@ const Events = () => {
                     <Menu size={26} />
                 </button>
                 <h1 className="text-lg font-bold text-ink-black">EpiskopOS</h1>
+                <div className="w-6" />
             </div>
 
             {/* Calendar Strip */}
@@ -217,42 +356,46 @@ const Events = () => {
                 ) : weekDatesWithEvents.length === 0 ? (
                     <p className="text-gray-500 text-sm">No events this week.</p>
                 ) : (
-                    weekDatesWithEvents
-                        .sort((a, b) => new Date(b) - new Date(a)) // most recent first
-                        .map((dateStr) => (
-                            <div key={dateStr} className="mb-6">
-                                <h2 className="text-ink-black font-semibold text-base mb-3">
-                                    {formatDateHeading(dateStr)}
-                                </h2>
-                                <div className="flex flex-col gap-3">
-                                    {eventsByDate[dateStr].map((event) => {
-                                        const isMainEvent = event === eventsByDate[dateStr][0];
-                                        return (
-                                            <button
-                                                key={event.id}
-                                                onClick={() => navigate(`/events/${event.id}`)}
-                                                className={`w-full text-left rounded-2xl px-5 py-4 shadow-sm transition-opacity hover:opacity-90
-                                                    ${isMainEvent
-                                                        ? "bg-dark-teal text-white"
-                                                        : "bg-ash-grey/30 text-ink-black"
-                                                    }`}
-                                            >
-                                                <p className={`text-sm mb-1 ${isMainEvent ? "text-white/70" : "text-gray-500"}`}>
-                                                    {formatTime(event.event_date)}
-                                                    {event.duration_minutes ? ` · ${event.duration_minutes} min` : ""}
+                    weekDatesWithEvents.map((dateStr) => (
+                        <div key={dateStr} className="mb-6">
+                            <h2 className="text-ink-black font-semibold text-base mb-3">
+                                {formatDateHeading(dateStr)}
+                            </h2>
+                            <div className="flex flex-col gap-3">
+                                {eventsByDate[dateStr].map((event) => (
+                                    <div key={event.id} className="relative">
+                                        <button
+                                            onClick={() => navigate(`/events/${event.id}`)}
+                                            className={`w-full text-left rounded-2xl px-5 py-4 shadow-sm transition-opacity hover:opacity-90 ${priorityCardClass(event.priority)}`}
+                                        >
+                                            <p className={`text-sm mb-1 ${prioritySubTextClass(event.priority)}`}>
+                                                {formatTime(event.event_date)}
+                                                {event.duration_minutes ? ` · ${event.duration_minutes} min` : ""}
+                                            </p>
+                                            <h3 className="font-bold text-lg leading-tight pr-8">{event.title}</h3>
+                                            {event.description && (
+                                                <p className={`text-sm mt-1 ${prioritySubTextClass(event.priority)}`}>
+                                                    {event.description}
                                                 </p>
-                                                <h3 className="font-bold text-lg leading-tight">{event.title}</h3>
-                                                {event.description && (
-                                                    <p className={`text-sm mt-1 ${isMainEvent ? "text-white/70" : "text-gray-500"}`}>
-                                                        {event.description}
-                                                    </p>
-                                                )}
+                                            )}
+                                        </button>
+
+                                        {/* Edit button — admin only, sits top-right of card */}
+                                        {isAdmin && (
+                                            <button
+                                                onClick={(e) => openEditModal(e, event)}
+                                                className={`absolute top-4 right-4 p-1 rounded-lg transition-opacity hover:opacity-70 ${
+                                                    event.priority === "high" ? "text-white/80" : "text-ink-black/40"
+                                                }`}
+                                            >
+                                                <Pencil size={15} />
                                             </button>
-                                        );
-                                    })}
-                                </div>
+                                        )}
+                                    </div>
+                                ))}
                             </div>
-                        ))
+                        </div>
+                    ))
                 )}
             </div>
 
@@ -272,51 +415,15 @@ const Events = () => {
             {/* Create Event Modal */}
             {showForm && (
                 <div className="fixed inset-0 bg-black/40 z-50 flex items-end">
-                    <div className="bg-white w-full rounded-t-3xl px-6 py-8">
+                    <div className="bg-white w-full rounded-t-3xl px-6 py-8 max-h-[90vh] overflow-y-auto">
                         <h2 className="text-xl font-bold text-ink-black mb-6">New Event</h2>
-                        <form onSubmit={handleCreateEvent} className="flex flex-col gap-4">
-                            <input
-                                name="title"
-                                value={form.title}
+                        <form onSubmit={handleCreateEvent} className="flex flex-col gap-4" noValidate>
+                            <EventFormFields
+                                values={form}
                                 onChange={handleFormChange}
-                                placeholder="Event title"
-                                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
+                                onPriorityChange={(p) => setForm((prev) => ({ ...prev, priority: p }))}
                             />
-                            <input
-                                name="location"
-                                value={form.location}
-                                onChange={handleFormChange}
-                                placeholder="Location (optional)"
-                                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
-                            />
-                            <input
-                                name="event_date"
-                                type="datetime-local"
-                                value={form.event_date}
-                                onChange={handleFormChange}
-                                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
-                            />
-                            <input
-                                name="duration_minutes"
-                                type="number"
-                                value={form.duration_minutes}
-                                onChange={handleFormChange}
-                                placeholder="Duration in minutes (optional)"
-                                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
-                            />
-                            <textarea
-                                name="description"
-                                value={form.description}
-                                onChange={handleFormChange}
-                                placeholder="Description (optional)"
-                                rows={3}
-                                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal resize-none"
-                            />
-
-                            {formError && (
-                                <p className="text-red-500 text-sm">{formError}</p>
-                            )}
-
+                            {formError && <p className="text-red-500 text-sm">{formError}</p>}
                             <div className="flex gap-3 mt-2">
                                 <button
                                     type="submit"
@@ -328,6 +435,39 @@ const Events = () => {
                                 <button
                                     type="button"
                                     onClick={() => { setShowForm(false); setFormError(""); }}
+                                    className="flex-1 bg-gray-100 text-ink-black py-3 rounded-xl font-medium hover:bg-gray-200"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Event Modal */}
+            {editingEvent && (
+                <div className="fixed inset-0 bg-black/40 z-50 flex items-end">
+                    <div className="bg-white w-full rounded-t-3xl px-6 py-8 max-h-[90vh] overflow-y-auto">
+                        <h2 className="text-xl font-bold text-ink-black mb-6">Edit Event</h2>
+                        <form onSubmit={handleUpdateEvent} className="flex flex-col gap-4" noValidate>
+                            <EventFormFields
+                                values={editForm}
+                                onChange={handleEditFormChange}
+                                onPriorityChange={(p) => setEditForm((prev) => ({ ...prev, priority: p }))}
+                            />
+                            {editError && <p className="text-red-500 text-sm">{editError}</p>}
+                            <div className="flex gap-3 mt-2">
+                                <button
+                                    type="submit"
+                                    disabled={editLoading}
+                                    className="flex-1 bg-dark-teal text-white py-3 rounded-xl font-medium hover:opacity-90 disabled:opacity-60"
+                                >
+                                    {editLoading ? "Saving..." : "Save Changes"}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => { setEditingEvent(null); setEditError(""); }}
                                     className="flex-1 bg-gray-100 text-ink-black py-3 rounded-xl font-medium hover:bg-gray-200"
                                 >
                                     Cancel
