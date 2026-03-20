@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft, Plus, Trash2 } from "lucide-react";
 import { getEvents, getSegments, createSegment, deleteSegment } from "../api";
 
-const EventDetail = () => {
+const EventSegment = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const role = localStorage.getItem("role");
@@ -275,4 +275,4 @@ const EventDetail = () => {
     );
 };
 
-export default EventDetail;
+export default EventSegment;
