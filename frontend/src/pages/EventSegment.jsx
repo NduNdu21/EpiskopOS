@@ -1,7 +1,10 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ChevronLeft, Plus, Trash2 } from "lucide-react";
-import { getEvents, getSegments, createSegment, deleteSegment } from "../api";
+import { ChevronLeft, Plus, GripVertical } from "lucide-react";
+import { getEvents, getSegments, createSegment, updateSegment, deleteSegment } from "../api";
+import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const TEAMS = ["sound", "lighting", "media", "instrumentalists", "projection"];
 
@@ -36,6 +39,76 @@ const TeamSelector = ({ selected, onChange }) => (
     </div>
 );
 
+const SortableSegmentCard = ({ seg, isAdmin, onTap }) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: seg.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+    };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            className="bg-white rounded-2xl px-4 py-4 shadow-sm flex items-start gap-3"
+        >
+            {/* Drag handle — only visible to admins */}
+            {isAdmin && (
+                <button
+                    className="mt-0.5 text-gray-300 hover:text-gray-400 touch-none flex-shrink-0"
+                    {...attributes}
+                    {...listeners}
+                >
+                    <GripVertical size={18} />
+                </button>
+            )}
+
+            {/* Card content — tappable to edit */}
+            <div
+                className="flex-1 cursor-pointer"
+                onClick={() => onTap(seg)}
+            >
+                <div className="flex items-center justify-between">
+                    <h4 className="text-ink-black font-semibold">{seg.title}</h4>
+                    <span className="text-ink-black font-medium text-sm ml-4">
+                        {seg.duration_minutes} min
+                    </span>
+                </div>
+
+                {seg.assigned_team?.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                        {seg.assigned_team.map((team) => (
+                            <span
+                                key={team}
+                                className="bg-dark-teal/10 text-dark-teal text-xs px-2.5 py-1 rounded-full capitalize font-medium"
+                            >
+                                {team}
+                            </span>
+                        ))}
+                    </div>
+                )}
+
+                {seg.notes && (
+                    <p className="text-gray-400 text-sm mt-1.5">{seg.notes}</p>
+                )}
+            </div>
+        </div>
+    );
+};
+
+const EMPTY_SEGMENT_FORM = {
+    title: "", duration_minutes: "", assigned_team: [], notes: "", order_index: ""
+};
+
 const EventSegment = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -46,13 +119,24 @@ const EventSegment = () => {
     const [segments, setSegments] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Segment form
+    // Create form
     const [showForm, setShowForm] = useState(false);
-    const [form, setForm] = useState({
-        title: "", duration_minutes: "", assigned_team: [], notes: "", order_index: ""
-    });
+    const [form, setForm] = useState(EMPTY_SEGMENT_FORM);
     const [formLoading, setFormLoading] = useState(false);
     const [formError, setFormError] = useState("");
+
+    // Edit form
+    const [editingSegment, setEditingSegment] = useState(null);
+    const [editForm, setEditForm] = useState(EMPTY_SEGMENT_FORM);
+    const [editLoading, setEditLoading] = useState(false);
+    const [editError, setEditError] = useState("");
+
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(TouchSensor, {
+            activationConstraint: { delay: 200, tolerance: 5 },
+        })
+    );
 
     const fetchData = useCallback(async () => {
         try {
@@ -75,8 +159,82 @@ const EventSegment = () => {
         fetchData();
     }, [fetchData]);
 
+    const handleDragEnd = async (dragEvent) => {
+        const { active, over } = dragEvent;
+        if (!over || active.id === over.id) return;
+
+        const oldIndex = segments.findIndex((s) => s.id === active.id);
+        const newIndex = segments.findIndex((s) => s.id === over.id);
+        const reordered = arrayMove(segments, oldIndex, newIndex);
+
+        // Optimistic update
+        setSegments(reordered);
+
+        // Persist new order_index values for each segment
+        try {
+            await Promise.all(
+                reordered.map((seg, index) =>
+                    updateSegment(id, seg.id, { ...seg, order_index: index })
+                )
+            );
+        } catch (err) {
+            console.error("reorder error:", err.message);
+            fetchData(); // revert on failure
+        }
+    };
+
     const handleFormChange = (e) => {
         setForm({ ...form, [e.target.name]: e.target.value });
+    };
+
+    const handleEditFormChange = (e) => {
+        setEditForm({ ...editForm, [e.target.name]: e.target.value });
+    };
+
+    const openEditModal = (seg) => {
+        if (!isAdmin) return;
+        setEditingSegment(seg);
+        setEditForm({
+            title: seg.title || "",
+            duration_minutes: seg.duration_minutes || "",
+            assigned_team: seg.assigned_team || [],
+            notes: seg.notes || "",
+            order_index: seg.order_index ?? "",
+        });
+        setEditError("");
+    };
+
+    const handleUpdateSegment = async (e) => {
+        e.preventDefault();
+        setEditError("");
+        if (!editForm.title || !editForm.duration_minutes) {
+            setEditError("Title and duration are required.");
+            return;
+        }
+        try {
+            setEditLoading(true);
+            await updateSegment(id, editingSegment.id, editForm);
+            setEditingSegment(null);
+            fetchData();
+        } catch (err) {
+            setEditError(err.message || "Failed to update segment.");
+        } finally {
+            setEditLoading(false);
+        }
+    };
+
+    const handleDeleteSegment = async () => {
+        if (!window.confirm("Delete this segment?")) return;
+        try {
+            setEditLoading(true);
+            await deleteSegment(id, editingSegment.id);
+            setEditingSegment(null);
+            fetchData();
+        } catch (err) {
+            setEditError(err.message || "Failed to delete segment.");
+        } finally {
+            setEditLoading(false);
+        }
     };
 
     const handleCreateSegment = async (e) => {
@@ -92,23 +250,13 @@ const EventSegment = () => {
                 ...form,
                 order_index: form.order_index || segments.length,
             });
-            setForm({ title: "", duration_minutes: "", assigned_team: [], notes: "", order_index: "" });
+            setForm(EMPTY_SEGMENT_FORM);
             setShowForm(false);
             fetchData();
         } catch (err) {
             setFormError(err.message || "Failed to create segment.");
         } finally {
             setFormLoading(false);
-        }
-    };
-
-    const handleDeleteSegment = async (segmentId) => {
-        if (!window.confirm("Delete this segment?")) return;
-        try {
-            await deleteSegment(id, segmentId);
-            fetchData();
-        } catch (err) {
-            console.error("deleteSegment error:", err.message);
         }
     };
 
@@ -139,6 +287,37 @@ const EventSegment = () => {
             </div>
         );
     }
+
+    const SegmentFormFields = ({ values, onChangeField, onTeamsChange }) => (
+        <>
+            <input
+                name="title"
+                value={values.title}
+                onChange={onChangeField}
+                placeholder="Segment title"
+                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
+            />
+            <input
+                name="duration_minutes"
+                type="number"
+                value={values.duration_minutes}
+                onChange={onChangeField}
+                placeholder="Duration in minutes"
+                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
+            />
+            <TeamSelector
+                selected={values.assigned_team}
+                onChange={onTeamsChange}
+            />
+            <input
+                name="notes"
+                value={values.notes}
+                onChange={onChangeField}
+                placeholder="Notes (optional)"
+                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
+            />
+        </>
+    );
 
     return (
         <div className="min-h-screen bg-beige flex flex-col">
@@ -176,52 +355,27 @@ const EventSegment = () => {
                     {segments.length === 0 ? (
                         <p className="text-gray-400 text-sm">No segments added yet.</p>
                     ) : (
-                        <div className="flex flex-col gap-3">
-                            {segments.map((seg) => (
-                                <div
-                                    key={seg.id}
-                                    className="bg-white rounded-2xl px-5 py-4 shadow-sm"
-                                >
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex-1">
-                                            <div className="flex items-center justify-between">
-                                                <h4 className="text-ink-black font-semibold">{seg.title}</h4>
-                                                <span className="text-ink-black font-medium text-sm ml-4">
-                                                    {seg.duration_minutes} min
-                                                </span>
-                                            </div>
-
-                                            {/* Team tags */}
-                                            {seg.assigned_team?.length > 0 && (
-                                                <div className="flex flex-wrap gap-1.5 mt-2">
-                                                    {seg.assigned_team.map((team) => (
-                                                        <span
-                                                            key={team}
-                                                            className="bg-dark-teal/10 text-dark-teal text-xs px-2.5 py-1 rounded-full capitalize font-medium"
-                                                        >
-                                                            {team}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            )}
-
-                                            {seg.notes && (
-                                                <p className="text-gray-400 text-sm mt-1.5">{seg.notes}</p>
-                                            )}
-                                        </div>
-
-                                        {isAdmin && (
-                                            <button
-                                                onClick={() => handleDeleteSegment(seg.id)}
-                                                className="ml-4 text-red-300 hover:text-red-500 transition-colors mt-0.5"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        )}
-                                    </div>
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={handleDragEnd}
+                        >
+                            <SortableContext
+                                items={segments.map((s) => s.id)}
+                                strategy={verticalListSortingStrategy}
+                            >
+                                <div className="flex flex-col gap-3">
+                                    {segments.map((seg) => (
+                                        <SortableSegmentCard
+                                            key={seg.id}
+                                            seg={seg}
+                                            isAdmin={isAdmin}
+                                            onTap={openEditModal}
+                                        />
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
+                            </SortableContext>
+                        </DndContext>
                     )}
                 </div>
 
@@ -237,55 +391,20 @@ const EventSegment = () => {
                 )}
             </div>
 
-            {/* Add Segment Modal */}
+            {/* Create Segment Modal */}
             {showForm && (
                 <div className="fixed inset-0 bg-black/40 z-50 flex items-end">
                     <div className="bg-white w-full rounded-t-3xl px-6 py-8 max-h-[90vh] overflow-y-auto">
                         <h2 className="text-xl font-bold text-ink-black mb-6">New Segment</h2>
                         <form onSubmit={handleCreateSegment} className="flex flex-col gap-4" noValidate>
-                            <input
-                                name="title"
-                                value={form.title}
-                                onChange={handleFormChange}
-                                placeholder="Segment title"
-                                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
-                            />
-                            <input
-                                name="duration_minutes"
-                                type="number"
-                                value={form.duration_minutes}
-                                onChange={handleFormChange}
-                                placeholder="Duration in minutes"
-                                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
-                            />
-
-                            <TeamSelector
-                                selected={form.assigned_team}
-                                onChange={(teams) =>
+                            <SegmentFormFields
+                                values={form}
+                                onChangeField={handleFormChange}
+                                onTeamsChange={(teams) =>
                                     setForm((prev) => ({ ...prev, assigned_team: teams }))
                                 }
                             />
-
-                            <input
-                                name="notes"
-                                value={form.notes}
-                                onChange={handleFormChange}
-                                placeholder="Notes (optional)"
-                                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
-                            />
-                            <input
-                                name="order_index"
-                                type="number"
-                                value={form.order_index}
-                                onChange={handleFormChange}
-                                placeholder="Order (optional, defaults to last)"
-                                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
-                            />
-
-                            {formError && (
-                                <p className="text-red-500 text-sm">{formError}</p>
-                            )}
-
+                            {formError && <p className="text-red-500 text-sm">{formError}</p>}
                             <div className="flex gap-3 mt-2">
                                 <button
                                     type="submit"
@@ -307,6 +426,48 @@ const EventSegment = () => {
                 </div>
             )}
 
+            {/* Edit Segment Modal */}
+            {editingSegment && (
+                <div className="fixed inset-0 bg-black/40 z-50 flex items-end">
+                    <div className="bg-white w-full rounded-t-3xl px-6 py-8 max-h-[90vh] overflow-y-auto">
+                        <h2 className="text-xl font-bold text-ink-black mb-6">Edit Segment</h2>
+                        <form onSubmit={handleUpdateSegment} className="flex flex-col gap-4" noValidate>
+                            <SegmentFormFields
+                                values={editForm}
+                                onChangeField={handleEditFormChange}
+                                onTeamsChange={(teams) =>
+                                    setEditForm((prev) => ({ ...prev, assigned_team: teams }))
+                                }
+                            />
+                            {editError && <p className="text-red-500 text-sm">{editError}</p>}
+                            <div className="flex gap-3 mt-2">
+                                <button
+                                    type="submit"
+                                    disabled={editLoading}
+                                    className="flex-1 bg-dark-teal text-white py-3 rounded-xl font-medium hover:opacity-90 disabled:opacity-60"
+                                >
+                                    {editLoading ? "Saving..." : "Save Changes"}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => { setEditingSegment(null); setEditError(""); }}
+                                    className="flex-1 bg-gray-100 text-ink-black py-3 rounded-xl font-medium hover:bg-gray-200"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleDeleteSegment}
+                                disabled={editLoading}
+                                className="w-full py-3 rounded-xl font-medium text-red-500 border border-red-200 hover:bg-red-50 disabled:opacity-60 transition-colors"
+                            >
+                                Delete Segment
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
