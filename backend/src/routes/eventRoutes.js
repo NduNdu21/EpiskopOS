@@ -6,10 +6,10 @@ const {
   createEvent,
   updateEvent,
   deleteEvent,
-  assignVolunteer,
   getCurrentAndNext,
   getSegments,
   createSegment,
+  updateSegment,
   deleteSegment,
 } = require("../controllers/eventController");
 
@@ -23,5 +23,6 @@ router.delete("/:id", deleteEvent);                   // admin
 router.get("/current", getCurrentAndNext);            // all users
 router.get("/:id/segments", getSegments);             // all users
 router.post("/:id/segments", createSegment);          // admin
+router.put("/:id/segments/:segmentId", updateSegment);// admin
 router.delete("/:id/segments/:segmentId", deleteSegment);  // admin
 module.exports = router;

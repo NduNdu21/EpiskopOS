@@ -150,6 +150,30 @@ exports.createSegment = async (req, res) => {
   }
 };
 
+// Edit segment (admin only)
+exports.updateSegment = async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+  const { title, duration_minutes, assigned_team, notes, order_index } = req.body;
+  try {
+    const result = await pool.query(
+      `UPDATE event_segments 
+       SET title=$1, duration_minutes=$2, assigned_team=$3, notes=$4, order_index=$5
+       WHERE id=$6 AND event_id=$7
+       RETURNING *`,
+      [title, duration_minutes, assigned_team, notes, order_index, req.params.segmentId, req.params.id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Segment not found" });
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("updateSegment error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // Delete segment (admin only)
 exports.deleteSegment = async (req, res) => {
   if (req.user.role !== "admin") {

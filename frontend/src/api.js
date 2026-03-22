@@ -145,6 +145,19 @@ export const createSegment = async (eventId, data) => {
   return handleResponse(res);
 };
 
+export const updateSegment = async (eventId, segmentId, data) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_BASE}/events/${eventId}/segments/${segmentId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  return handleResponse(res);
+};
+
 export const deleteSegment = async (eventId, segmentId) => {
   const token = localStorage.getItem("token");
   const res = await fetch(`${API_BASE}/events/${eventId}/segments/${segmentId}`, {
