@@ -3,6 +3,39 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft, Plus, Trash2 } from "lucide-react";
 import { getEvents, getSegments, createSegment, deleteSegment } from "../api";
 
+const TEAMS = ["sound", "lighting", "media", "instrumentalists", "projection"];
+
+const TeamSelector = ({ selected, onChange }) => (
+    <div className="flex flex-col gap-2">
+        <label className="text-sm font-medium text-ink-black/70 pl-1">Teams</label>
+        <div className="flex flex-wrap gap-2">
+            {TEAMS.map((team) => {
+                const isSelected = selected.includes(team);
+                return (
+                    <button
+                        key={team}
+                        type="button"
+                        onClick={() =>
+                            onChange(
+                                isSelected
+                                    ? selected.filter((t) => t !== team)
+                                    : [...selected, team]
+                            )
+                        }
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium capitalize border transition-colors ${
+                            isSelected
+                                ? "bg-dark-teal text-white border-dark-teal"
+                                : "bg-gray-50 text-gray-400 border-gray-200"
+                        }`}
+                    >
+                        {team}
+                    </button>
+                );
+            })}
+        </div>
+    </div>
+);
+
 const EventSegment = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -16,7 +49,7 @@ const EventSegment = () => {
     // Segment form
     const [showForm, setShowForm] = useState(false);
     const [form, setForm] = useState({
-        title: "", duration_minutes: "", assigned_team: "", notes: "", order_index: ""
+        title: "", duration_minutes: "", assigned_team: [], notes: "", order_index: ""
     });
     const [formLoading, setFormLoading] = useState(false);
     const [formError, setFormError] = useState("");
@@ -59,7 +92,7 @@ const EventSegment = () => {
                 ...form,
                 order_index: form.order_index || segments.length,
             });
-            setForm({ title: "", duration_minutes: "", assigned_team: "", notes: "", order_index: "" });
+            setForm({ title: "", duration_minutes: "", assigned_team: [], notes: "", order_index: "" });
             setShowForm(false);
             fetchData();
         } catch (err) {
@@ -129,21 +162,8 @@ const EventSegment = () => {
                         {formatDate(event.event_date)} · {formatTime(event.event_date)}
                         {event.duration_hours ? ` · ${event.duration_hours} hr` : ""}
                     </p>
-
-                    {/* Team tags */}
-                    <div className="flex flex-wrap gap-2 mb-3">
-                        {["Sound", "Projection", "Lighting"].map((tag) => (
-                            <span
-                                key={tag}
-                                className="bg-white/20 text-white text-xs px-3 py-1 rounded-full"
-                            >
-                                {tag}
-                            </span>
-                        ))}
-                    </div>
-
                     <span className="bg-white/20 text-white text-xs px-3 py-1 rounded-full">
-                        {segments.length} segments
+                        {segments.length} segment{segments.length !== 1 ? "s" : ""}
                     </span>
                 </div>
 
@@ -160,30 +180,45 @@ const EventSegment = () => {
                             {segments.map((seg) => (
                                 <div
                                     key={seg.id}
-                                    className="bg-white rounded-2xl px-5 py-4 flex items-center justify-between shadow-sm"
+                                    className="bg-white rounded-2xl px-5 py-4 shadow-sm"
                                 >
-                                    <div className="flex-1">
-                                        <div className="flex items-center justify-between">
-                                            <h4 className="text-ink-black font-semibold">{seg.title}</h4>
-                                            <span className="text-ink-black font-medium text-sm ml-4">
-                                                {seg.duration_minutes} min
-                                            </span>
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex-1">
+                                            <div className="flex items-center justify-between">
+                                                <h4 className="text-ink-black font-semibold">{seg.title}</h4>
+                                                <span className="text-ink-black font-medium text-sm ml-4">
+                                                    {seg.duration_minutes} min
+                                                </span>
+                                            </div>
+
+                                            {/* Team tags */}
+                                            {seg.assigned_team?.length > 0 && (
+                                                <div className="flex flex-wrap gap-1.5 mt-2">
+                                                    {seg.assigned_team.map((team) => (
+                                                        <span
+                                                            key={team}
+                                                            className="bg-dark-teal/10 text-dark-teal text-xs px-2.5 py-1 rounded-full capitalize font-medium"
+                                                        >
+                                                            {team}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {seg.notes && (
+                                                <p className="text-gray-400 text-sm mt-1.5">{seg.notes}</p>
+                                            )}
                                         </div>
-                                        <p className="text-gray-400 text-sm mt-0.5">
-                                            {seg.assigned_team && `${seg.assigned_team}`}
-                                            {seg.assigned_team && seg.notes && " · "}
-                                            {seg.notes && `${seg.notes}`}
-                                            {!seg.assigned_team && !seg.notes && "No notes"}
-                                        </p>
+
+                                        {isAdmin && (
+                                            <button
+                                                onClick={() => handleDeleteSegment(seg.id)}
+                                                className="ml-4 text-red-300 hover:text-red-500 transition-colors mt-0.5"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        )}
                                     </div>
-                                    {isAdmin && (
-                                        <button
-                                            onClick={() => handleDeleteSegment(seg.id)}
-                                            className="ml-4 text-red-300 hover:text-red-500 transition-colors"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
-                                    )}
                                 </div>
                             ))}
                         </div>
@@ -205,9 +240,9 @@ const EventSegment = () => {
             {/* Add Segment Modal */}
             {showForm && (
                 <div className="fixed inset-0 bg-black/40 z-50 flex items-end">
-                    <div className="bg-white w-full rounded-t-3xl px-6 py-8">
+                    <div className="bg-white w-full rounded-t-3xl px-6 py-8 max-h-[90vh] overflow-y-auto">
                         <h2 className="text-xl font-bold text-ink-black mb-6">New Segment</h2>
-                        <form onSubmit={handleCreateSegment} className="flex flex-col gap-4">
+                        <form onSubmit={handleCreateSegment} className="flex flex-col gap-4" noValidate>
                             <input
                                 name="title"
                                 value={form.title}
@@ -223,13 +258,14 @@ const EventSegment = () => {
                                 placeholder="Duration in minutes"
                                 className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
                             />
-                            <input
-                                name="assigned_team"
-                                value={form.assigned_team}
-                                onChange={handleFormChange}
-                                placeholder="Assigned team (optional)"
-                                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
+
+                            <TeamSelector
+                                selected={form.assigned_team}
+                                onChange={(teams) =>
+                                    setForm((prev) => ({ ...prev, assigned_team: teams }))
+                                }
                             />
+
                             <input
                                 name="notes"
                                 value={form.notes}
