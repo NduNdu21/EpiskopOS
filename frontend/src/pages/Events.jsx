@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { Menu, ChevronLeft, ChevronRight, Plus, Home, Film, MessageSquare, Users, Pencil } from "lucide-react";
-import { getEvents, createEvent, updateEvent } from "../api";
-import Sidebar  from "../components/Sidebar";
+import { getEvents, createEvent, updateEvent, deleteEvent } from "../api";
+import Sidebar from "../components/Sidebar";
 
 // Helper: get the Monday of the week containing a given date
 const getWeekStart = (date) => {
@@ -43,10 +43,10 @@ const PRIORITY_LABELS = ["high", "medium", "low"];
 
 const priorityCardClass = (priority) => {
     switch (priority) {
-        case "high":   return "bg-dark-teal text-white";
+        case "high": return "bg-dark-teal text-white";
         case "medium": return "bg-ash-grey/40 text-ink-black";
-        case "low":    return "bg-white text-ink-black";
-        default:       return "bg-ash-grey/40 text-ink-black";
+        case "low": return "bg-white text-ink-black";
+        default: return "bg-ash-grey/40 text-ink-black";
     }
 };
 
@@ -202,6 +202,20 @@ const Events = () => {
         }
     };
 
+    const handleDeleteEvent = async () => {
+        if (!window.confirm(`Delete "${editingEvent.title}"? This cannot be undone.`)) return;
+        try {
+            setEditLoading(true);
+            await deleteEvent(editingEvent.id);
+            setEditingEvent(null);
+            fetchEvents();
+        } catch (err) {
+            setEditError(err.message || "Failed to delete event.");
+        } finally {
+            setEditLoading(false);
+        }
+    };
+
     const formatTime = (dateStr) => {
         return new Date(dateStr).toLocaleTimeString([], {
             hour: "2-digit",
@@ -231,15 +245,14 @@ const Events = () => {
                         key={p}
                         type="button"
                         onClick={() => onChange(p)}
-                        className={`flex-1 py-2 rounded-xl text-sm font-medium capitalize border transition-colors ${
-                            value === p
-                                ? p === "high"
-                                    ? "bg-dark-teal text-white border-dark-teal"
-                                    : p === "medium"
-                                        ? "bg-ash-grey/60 text-ink-black border-ash-grey"
-                                        : "bg-white text-ink-black border-gray-300 shadow-sm"
-                                : "bg-gray-50 text-gray-400 border-gray-200"
-                        }`}
+                        className={`flex-1 py-2 rounded-xl text-sm font-medium capitalize border transition-colors ${value === p
+                            ? p === "high"
+                                ? "bg-dark-teal text-white border-dark-teal"
+                                : p === "medium"
+                                    ? "bg-ash-grey/60 text-ink-black border-ash-grey"
+                                    : "bg-white text-ink-black border-gray-300 shadow-sm"
+                            : "bg-gray-50 text-gray-400 border-gray-200"
+                            }`}
                     >
                         {p}
                     </button>
@@ -384,9 +397,8 @@ const Events = () => {
                                         {isAdmin && (
                                             <button
                                                 onClick={(e) => openEditModal(e, event)}
-                                                className={`absolute top-4 right-4 p-1 rounded-lg transition-opacity hover:opacity-70 ${
-                                                    event.priority === "high" ? "text-white/80" : "text-ink-black/40"
-                                                }`}
+                                                className={`absolute top-4 right-4 p-1 rounded-lg transition-opacity hover:opacity-70 ${event.priority === "high" ? "text-white/80" : "text-ink-black/40"
+                                                    }`}
                                             >
                                                 <Pencil size={15} />
                                             </button>
@@ -473,6 +485,14 @@ const Events = () => {
                                     Cancel
                                 </button>
                             </div>
+                            <button
+                                type="button"
+                                onClick={handleDeleteEvent}
+                                disabled={editLoading}
+                                className="w-full py-3 rounded-xl font-medium text-red-500 border border-red-200 hover:bg-red-50 disabled:opacity-60 transition-colors"
+                            >
+                                Delete Event
+                            </button>
                         </form>
                     </div>
                 </div>
