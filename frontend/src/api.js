@@ -116,20 +116,6 @@ export const deleteEvent = async (id) => {
   return handleResponse(res);
 };
 
-
-export const assignVolunteer = async (eventId, userId) => {
-  const token = localStorage.getItem("token");
-  const res = await fetch(`${API_BASE}/events/${eventId}/assign`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ user_id: userId }),
-  });
-  return handleResponse(res);
-};
-
 export const getCurrentAndNext = async () => {
   const token = localStorage.getItem("token");
   const res = await fetch(`${API_BASE}/events/current`, {
