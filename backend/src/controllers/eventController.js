@@ -166,3 +166,33 @@ exports.deleteSegment = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// Go live
+exports.goLive = async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+  try {
+    const result = await pool.query(
+      `UPDATE events 
+       SET is_live = TRUE, started_at = NOW(), current_segment_index = 0
+       WHERE id = $1
+       RETURNING *`,
+      [req.params.id]
+    );
+
+    const event = result.rows[0];
+
+    // Notify all clients in this service room
+    const io = req.app.get("io");
+    io.to(req.params.id).emit("service_update", {
+      type: "GO_LIVE",
+      event,
+    });
+
+    res.json(event);
+  } catch (err) {
+    console.error("goLive error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+}; 
