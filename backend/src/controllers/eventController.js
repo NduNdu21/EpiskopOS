@@ -141,7 +141,7 @@ exports.createSegment = async (req, res) => {
       `INSERT INTO event_segments (event_id, title, duration_minutes, assigned_team, notes, order_index)
        VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [req.params.id, title, duration_minutes, assigned_team, notes, order_index || 0]
+      [req.params.id, title, duration_minutes, assigned_team || [], notes, order_index || 0]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
