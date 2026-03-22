@@ -67,6 +67,76 @@ const EMPTY_FORM = {
     location: "", duration_hours: "", priority: "medium"
 };
 
+// Reusable priority picker used in both modals
+const PriorityPicker = ({ value, onChange }) => (
+    <div className="flex flex-col gap-2">
+        <label className="text-sm font-medium text-ink-black/70 pl-1">Priority</label>
+        <div className="flex gap-2">
+            {PRIORITY_LABELS.map((p) => (
+                <button
+                    key={p}
+                    type="button"
+                    onClick={() => onChange(p)}
+                    className={`flex-1 py-2 rounded-xl text-sm font-medium capitalize border transition-colors ${value === p
+                        ? p === "high"
+                            ? "bg-dark-teal text-white border-dark-teal"
+                            : p === "medium"
+                                ? "bg-ash-grey/60 text-ink-black border-ash-grey"
+                                : "bg-white text-ink-black border-gray-300 shadow-sm"
+                        : "bg-gray-50 text-gray-400 border-gray-200"
+                        }`}
+                >
+                    {p}
+                </button>
+            ))}
+        </div>
+    </div>
+);
+
+// Shared modal form fields to avoid duplication
+const EventFormFields = ({ values, onChange, onPriorityChange }) => (
+    <>
+        <input
+            name="title"
+            value={values.title}
+            onChange={onChange}
+            placeholder="Event title"
+            className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
+        />
+        <input
+            name="location"
+            value={values.location}
+            onChange={onChange}
+            placeholder="Location (optional)"
+            className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
+        />
+        <input
+            name="event_date"
+            type="datetime-local"
+            value={values.event_date}
+            onChange={onChange}
+            className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
+        />
+        <input
+            name="duration_hours"
+            type="number"
+            value={values.duration_hours}
+            onChange={onChange}
+            placeholder="Duration in hours (optional)"
+            className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
+        />
+        <textarea
+            name="description"
+            value={values.description}
+            onChange={onChange}
+            placeholder="Description (optional)"
+            rows={3}
+            className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal resize-none"
+        />
+        <PriorityPicker value={values.priority} onChange={onPriorityChange} />
+    </>
+);
+
 const Events = () => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -234,76 +304,6 @@ const Events = () => {
 
     // Month label for the week displayed
     const monthLabel = `${MONTH_NAMES[weekStart.getMonth()]} ${weekStart.getFullYear()}`;
-
-    // Reusable priority picker used in both modals
-    const PriorityPicker = ({ value, onChange }) => (
-        <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-ink-black/70 pl-1">Priority</label>
-            <div className="flex gap-2">
-                {PRIORITY_LABELS.map((p) => (
-                    <button
-                        key={p}
-                        type="button"
-                        onClick={() => onChange(p)}
-                        className={`flex-1 py-2 rounded-xl text-sm font-medium capitalize border transition-colors ${value === p
-                            ? p === "high"
-                                ? "bg-dark-teal text-white border-dark-teal"
-                                : p === "medium"
-                                    ? "bg-ash-grey/60 text-ink-black border-ash-grey"
-                                    : "bg-white text-ink-black border-gray-300 shadow-sm"
-                            : "bg-gray-50 text-gray-400 border-gray-200"
-                            }`}
-                    >
-                        {p}
-                    </button>
-                ))}
-            </div>
-        </div>
-    );
-
-    // Shared modal form fields to avoid duplication
-    const EventFormFields = ({ values, onChange, onPriorityChange }) => (
-        <>
-            <input
-                name="title"
-                value={values.title}
-                onChange={onChange}
-                placeholder="Event title"
-                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
-            />
-            <input
-                name="location"
-                value={values.location}
-                onChange={onChange}
-                placeholder="Location (optional)"
-                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
-            />
-            <input
-                name="event_date"
-                type="datetime-local"
-                value={values.event_date}
-                onChange={onChange}
-                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
-            />
-            <input
-                name="duration_hours"
-                type="number"
-                value={values.duration_hours}
-                onChange={onChange}
-                placeholder="Duration in hours (optional)"
-                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
-            />
-            <textarea
-                name="description"
-                value={values.description}
-                onChange={onChange}
-                placeholder="Description (optional)"
-                rows={3}
-                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal resize-none"
-            />
-            <PriorityPicker value={values.priority} onChange={onPriorityChange} />
-        </>
-    );
 
     return (
         <div className="min-h-screen bg-beige flex flex-col">
