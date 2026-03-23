@@ -168,6 +168,28 @@ export const deleteSegment = async (eventId, segmentId) => {
   return handleResponse(res);
 };
 
+export const addSegmentTeam = async (eventId, segmentId, team) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_BASE}/events/${eventId}/segments/${segmentId}/teams`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ team }),
+  });
+  return handleResponse(res);
+};
+
+export const removeSegmentTeam = async (eventId, segmentId, team) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_BASE}/events/${eventId}/segments/${segmentId}/teams/${team}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleResponse(res);
+};
+
 //Live services
 export const getLiveEvent = async () => {
   const token = localStorage.getItem("token");
