@@ -111,13 +111,39 @@ exports.getCurrentAndNext = async (req, res) => {
   }
 };
 
+//Events display for volunteers
+exports.getMyEvents = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT DISTINCT e.* FROM events e
+       JOIN event_segments es ON e.id = es.event_id
+       JOIN segment_teams st ON es.id = st.segment_id
+       WHERE e.all_teams = TRUE
+       OR st.team = $1
+       ORDER BY e.event_date ASC`,
+      [req.user.role]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error("getMyEvents error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // Get segments for an event
 exports.getSegments = async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT * FROM event_segments 
-       WHERE event_id = $1 
-       ORDER BY order_index ASC`,
+      `SELECT es.*, 
+        COALESCE(
+          array_agg(st.team) FILTER (WHERE st.team IS NOT NULL), 
+          '{}'
+        ) AS teams
+       FROM event_segments es
+       LEFT JOIN segment_teams st ON es.id = st.segment_id
+       WHERE es.event_id = $1
+       GROUP BY es.id
+       ORDER BY es.order_index ASC`,
       [req.params.id]
     );
     res.json(result.rows);
@@ -132,18 +158,47 @@ exports.createSegment = async (req, res) => {
   if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Forbidden" });
   }
-  const { title, duration_minutes, assigned_team, notes, order_index } = req.body;
+  const { title, duration_minutes, notes, order_index, teams } = req.body;
   if (!title || !duration_minutes) {
     return res.status(400).json({ message: "Title and duration are required" });
   }
   try {
+    // Insert segment
     const result = await pool.query(
-      `INSERT INTO event_segments (event_id, title, duration_minutes, assigned_team, notes, order_index)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO event_segments (event_id, title, duration_minutes, notes, order_index)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [req.params.id, title, duration_minutes, assigned_team || [], notes, order_index || 0]
+      [req.params.id, title, duration_minutes, notes, order_index || 0]
     );
-    res.status(201).json(result.rows[0]);
+
+    const segment = result.rows[0];
+
+    // Insert teams if provided
+    if (teams && teams.length > 0) {
+      for (const team of teams) {
+        await pool.query(
+          `INSERT INTO segment_teams (segment_id, team) VALUES ($1, $2)
+           ON CONFLICT DO NOTHING`,
+          [segment.id, team]
+        );
+      }
+    }
+
+    // Return segment with teams
+    const full = await pool.query(
+      `SELECT es.*,
+        COALESCE(
+          array_agg(st.team) FILTER (WHERE st.team IS NOT NULL),
+          '{}'
+        ) AS teams
+       FROM event_segments es
+       LEFT JOIN segment_teams st ON es.id = st.segment_id
+       WHERE es.id = $1
+       GROUP BY es.id`,
+      [segment.id]
+    );
+
+    res.status(201).json(full.rows[0]);
   } catch (err) {
     console.error("createSegment error:", err.message);
     res.status(500).json({ error: err.message });
@@ -187,6 +242,46 @@ exports.deleteSegment = async (req, res) => {
     res.json({ message: "Segment deleted" });
   } catch (err) {
     console.error("deleteSegment error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Add team to segment (admin only)
+exports.addSegmentTeam = async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+  const { team } = req.body;
+  if (!team) {
+    return res.status(400).json({ message: "Team is required" });
+  }
+  try {
+    await pool.query(
+      `INSERT INTO segment_teams (segment_id, team) VALUES ($1, $2)
+       ON CONFLICT DO NOTHING`,
+      [req.params.segmentId, team]
+    );
+    res.json({ message: "Team added" });
+  } catch (err) {
+    console.error("addSegmentTeam error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Remove team from segment (admin only)
+exports.removeSegmentTeam = async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+  try {
+    await pool.query(
+      `DELETE FROM segment_teams 
+       WHERE segment_id = $1 AND team = $2`,
+      [req.params.segmentId, req.params.team]
+    );
+    res.json({ message: "Team removed" });
+  } catch (err) {
+    console.error("removeSegmentTeam error:", err.message);
     res.status(500).json({ error: err.message });
   }
 };

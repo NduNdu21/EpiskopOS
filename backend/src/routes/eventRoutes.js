@@ -6,11 +6,14 @@ const {
   createEvent,
   updateEvent,
   deleteEvent,
+  getMyEvents,
   getCurrentAndNext,
   getSegments,
   createSegment,
   updateSegment,
   deleteSegment,
+  addSegmentTeam,
+  removeSegmentTeam,
   goLive,
   nextSegment,
   prevSegment,
@@ -26,6 +29,7 @@ router.get("/", getEvents);                           // all users
 router.post("/", createEvent);                        // admin
 router.put("/:id", updateEvent);                      // admin
 router.delete("/:id", deleteEvent);                   // admin
+router.get("/", getMyEvents);                         // volunteers
 
 //Home page display route
 router.get("/current", getCurrentAndNext);            // all users
@@ -35,6 +39,10 @@ router.get("/:id/segments", getSegments);             // all users
 router.post("/:id/segments", createSegment);          // admin
 router.put("/:id/segments/:segmentId", updateSegment);// admin
 router.delete("/:id/segments/:segmentId", deleteSegment);  // admin
+
+// Segment team routes
+router.post("/:id/segments/:segmentId/teams", addSegmentTeam);    //admin
+router.delete("/:id/segments/:segmentId/teams/:team", removeSegmentTeam);    //admin
 
 // Live service routes
 router.get("/live", getLiveEvent);
