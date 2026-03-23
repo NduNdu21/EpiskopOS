@@ -124,6 +124,7 @@ export const getCurrentAndNext = async () => {
   return handleResponse(res);
 };
 
+//Segments
 export const getSegments = async (eventId) => {
   const token = localStorage.getItem("token");
   const res = await fetch(`${API_BASE}/events/${eventId}/segments`, {
@@ -162,6 +163,51 @@ export const deleteSegment = async (eventId, segmentId) => {
   const token = localStorage.getItem("token");
   const res = await fetch(`${API_BASE}/events/${eventId}/segments/${segmentId}`, {
     method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleResponse(res);
+};
+
+//Live services
+export const getLiveEvent = async () => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_BASE}/events/live`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleResponse(res);
+};
+
+export const goLive = async (eventId) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_BASE}/events/${eventId}/golive`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleResponse(res);
+};
+
+export const nextSegment = async (eventId) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_BASE}/events/${eventId}/next`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleResponse(res);
+};
+
+export const prevSegment = async (eventId) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_BASE}/events/${eventId}/prev`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleResponse(res);
+};
+
+export const endService = async (eventId) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_BASE}/events/${eventId}/end`, {
+    method: "POST",
     headers: { Authorization: `Bearer ${token}` },
   });
   return handleResponse(res);
