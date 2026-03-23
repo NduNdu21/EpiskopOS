@@ -220,3 +220,106 @@ exports.goLive = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 }; 
+
+// Next segment
+exports.nextSegment = async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+  try {
+    const result = await pool.query(
+      `UPDATE events 
+       SET current_segment_index = current_segment_index + 1
+       WHERE id = $1
+       RETURNING *`,
+      [req.params.id]
+    );
+
+    const event = result.rows[0];
+
+    const io = req.app.get("io");
+    io.to(req.params.id).emit("service_update", {
+      type: "NEXT_SEGMENT",
+      event,
+    });
+
+    res.json(event);
+  } catch (err) {
+    console.error("nextSegment error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Previous segment
+exports.prevSegment = async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+  try {
+    const result = await pool.query(
+      `UPDATE events
+       SET current_segment_index = GREATEST(current_segment_index - 1, 0)
+       WHERE id = $1
+       RETURNING *`,
+      [req.params.id]
+    );
+
+    const event = result.rows[0];
+
+    const io = req.app.get("io");
+    io.to(req.params.id).emit("service_update", {
+      type: "PREV_SEGMENT",
+      event,
+    });
+
+    res.json(event);
+  } catch (err) {
+    console.error("prevSegment error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// End service
+exports.endService = async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+  try {
+    const result = await pool.query(
+      `UPDATE events 
+       SET is_live = FALSE, started_at = NULL, current_segment_index = 0
+       WHERE id = $1
+       RETURNING *`,
+      [req.params.id]
+    );
+
+    const event = result.rows[0];
+
+    const io = req.app.get("io");
+    io.to(req.params.id).emit("service_update", {
+      type: "END_SERVICE",
+      event,
+    });
+
+    res.json(event);
+  } catch (err) {
+    console.error("endService error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Get live event for today
+exports.getLiveEvent = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM events 
+       WHERE is_live = TRUE 
+       AND DATE(event_date) = CURRENT_DATE
+       LIMIT 1`
+    );
+    res.json(result.rows[0] || null);
+  } catch (err) {
+    console.error("getLiveEvent error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
