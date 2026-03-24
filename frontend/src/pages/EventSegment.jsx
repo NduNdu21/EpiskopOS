@@ -6,7 +6,7 @@ import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSe
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-const TEAMS = ["sound", "lighting", "media", "instrumentalists", "projection"];
+const TEAMS = ["admin", "volunteer", "lighting", "sound", "media", "instrumentalists"];
 
 const TeamSelector = ({ selected, onChange }) => (
     <div className="flex flex-col gap-2">
@@ -25,11 +25,10 @@ const TeamSelector = ({ selected, onChange }) => (
                                     : [...selected, team]
                             )
                         }
-                        className={`px-3 py-1.5 rounded-full text-sm font-medium capitalize border transition-colors ${
-                            isSelected
+                        className={`px-3 py-1.5 rounded-full text-sm font-medium capitalize border transition-colors ${isSelected
                                 ? "bg-dark-teal text-white border-dark-teal"
                                 : "bg-gray-50 text-gray-400 border-gray-200"
-                        }`}
+                            }`}
                     >
                         {team}
                     </button>
@@ -84,9 +83,9 @@ const SortableSegmentCard = ({ seg, isAdmin, onTap }) => {
                     </span>
                 </div>
 
-                {seg.assigned_team?.length > 0 && (
+                {seg.teams?.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-2">
-                        {seg.assigned_team.map((team) => (
+                        {seg.teams.map((team) => (
                             <span
                                 key={team}
                                 className="bg-dark-teal/10 text-dark-teal text-xs px-2.5 py-1 rounded-full capitalize font-medium"
@@ -106,8 +105,39 @@ const SortableSegmentCard = ({ seg, isAdmin, onTap }) => {
 };
 
 const EMPTY_SEGMENT_FORM = {
-    title: "", duration_minutes: "", assigned_team: [], notes: "", order_index: ""
+    title: "", duration_minutes: "", teams: [], notes: "", order_index: ""
 };
+
+const SegmentFormFields = ({ values, onChangeField, onTeamsChange }) => (
+        <>
+            <input
+                name="title"
+                value={values.title}
+                onChange={onChangeField}
+                placeholder="Segment title"
+                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
+            />
+            <input
+                name="duration_minutes"
+                type="number"
+                value={values.duration_minutes}
+                onChange={onChangeField}
+                placeholder="Duration in minutes"
+                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
+            />
+            <TeamSelector
+                selected={values.teams}
+                onChange={onTeamsChange}
+            />
+            <input
+                name="notes"
+                value={values.notes}
+                onChange={onChangeField}
+                placeholder="Notes (optional)"
+                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
+            />
+        </>
+    );
 
 const EventSegment = () => {
     const { id } = useParams();
@@ -147,7 +177,17 @@ const EventSegment = () => {
             ]);
             const found = allEvents.find((e) => e.id === id);
             setEvent(found || null);
-            setSegments(segs);
+
+            // Normalise teams field from PostgreSQL array string to JS array
+            const normalised = segs.map((seg) => ({
+                ...seg,
+                teams: Array.isArray(seg.teams)
+                    ? seg.teams
+                    : seg.teams
+                        ? seg.teams.replace(/[{}]/g, "").split(",").filter(Boolean)
+                        : [],
+            }));
+            setSegments(normalised);
         } catch (err) {
             console.error("fetchData error:", err.message);
         } finally {
@@ -197,7 +237,7 @@ const EventSegment = () => {
         setEditForm({
             title: seg.title || "",
             duration_minutes: seg.duration_minutes || "",
-            assigned_team: seg.assigned_team || [],
+            teams: seg.teams || [],
             notes: seg.notes || "",
             order_index: seg.order_index ?? "",
         });
@@ -288,37 +328,6 @@ const EventSegment = () => {
         );
     }
 
-    const SegmentFormFields = ({ values, onChangeField, onTeamsChange }) => (
-        <>
-            <input
-                name="title"
-                value={values.title}
-                onChange={onChangeField}
-                placeholder="Segment title"
-                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
-            />
-            <input
-                name="duration_minutes"
-                type="number"
-                value={values.duration_minutes}
-                onChange={onChangeField}
-                placeholder="Duration in minutes"
-                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
-            />
-            <TeamSelector
-                selected={values.assigned_team}
-                onChange={onTeamsChange}
-            />
-            <input
-                name="notes"
-                value={values.notes}
-                onChange={onChangeField}
-                placeholder="Notes (optional)"
-                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
-            />
-        </>
-    );
-
     return (
         <div className="min-h-screen bg-beige flex flex-col">
 
@@ -401,7 +410,7 @@ const EventSegment = () => {
                                 values={form}
                                 onChangeField={handleFormChange}
                                 onTeamsChange={(teams) =>
-                                    setForm((prev) => ({ ...prev, assigned_team: teams }))
+                                    setForm((prev) => ({ ...prev, teams }))
                                 }
                             />
                             {formError && <p className="text-red-500 text-sm">{formError}</p>}
@@ -436,7 +445,7 @@ const EventSegment = () => {
                                 values={editForm}
                                 onChangeField={handleEditFormChange}
                                 onTeamsChange={(teams) =>
-                                    setEditForm((prev) => ({ ...prev, assigned_team: teams }))
+                                    setEditForm((prev) => ({ ...prev, teams }))
                                 }
                             />
                             {editError && <p className="text-red-500 text-sm">{editError}</p>}
