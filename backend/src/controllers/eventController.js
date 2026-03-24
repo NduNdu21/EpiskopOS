@@ -210,14 +210,14 @@ exports.updateSegment = async (req, res) => {
   if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Forbidden" });
   }
-  const { title, duration_minutes, assigned_team, notes, order_index } = req.body;
+  const { title, duration_minutes, notes, order_index } = req.body;
   try {
     const result = await pool.query(
       `UPDATE event_segments 
-       SET title=$1, duration_minutes=$2, assigned_team=$3, notes=$4, order_index=$5
-       WHERE id=$6 AND event_id=$7
+       SET title=$1, duration_minutes=$2, notes=$3, order_index=$4
+       WHERE id=$5 AND event_id=$6
        RETURNING *`,
-      [title, duration_minutes, assigned_team, notes, order_index, req.params.segmentId, req.params.id]
+      [title, duration_minutes, notes, order_index, req.params.segmentId, req.params.id]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ message: "Segment not found" });
