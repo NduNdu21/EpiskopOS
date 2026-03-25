@@ -1,15 +1,8 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Home, Film, MessageSquare, Users, Menu } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Menu } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import { getCurrentAndNext, getMe } from "../api";
-
-const NAV_ITEMS = [
-  { label: "Home", icon: Home, path: "/" },
-  { label: "Events", icon: Film, path: "/events" },
-  { label: "Messages", icon: MessageSquare, path: "/messages" },
-  { label: "Members", icon: Users, path: "/members" },
-];
 
 // Formats event_date + start_time into "Sun 22 Mar · 10:00am"
 const formatServiceDate = (event) => {
@@ -35,7 +28,6 @@ const capitalise = (str = "") =>
   str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 
 const HomePage = () => {
-  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [user, setUser] = useState(null);
@@ -146,24 +138,6 @@ const HomePage = () => {
             )}
           </div>
         </Link>
-      </div>
-
-      {/* Nav bar bottom */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around items-center px-4 py-3">
-        {NAV_ITEMS.map(({ label, icon: Icon, path }) => {
-          const isActive = location.pathname === path;
-          return (
-            <Link
-              key={label}
-              to={path}
-              className={`flex flex-col items-center gap-1 ${isActive ? "text-dark-teal" : "text-ink-black"
-                }`}
-            >
-              <Icon size={26} strokeWidth={isActive ? 2.5 : 1.5} />
-              <span className="text-xs font-medium">{label}</span>
-            </Link>
-          );
-        })}
       </div>
     </div>
   );

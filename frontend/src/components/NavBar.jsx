@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Home, Film, MessageSquare, Users, Radio } from "lucide-react";
