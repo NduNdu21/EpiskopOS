@@ -8,6 +8,7 @@ import Events from "./pages/Events";
 import EventSegment from "./pages/EventSegment";
 import Messages from "./pages/Messages";
 import Members from './pages/Members';
+import Live from "./pages/Live";
 
 function App() {
 
@@ -29,6 +30,9 @@ function App() {
         } />
         <Route path="/messages" element={<Messages />} />
         <Route path="/members" element={<Members />} />
+        <Route path="/live" element={
+          <ProtectedRoute><Live /></ProtectedRoute>
+        } />
       </Routes>
     </BrowserRouter>
   )
