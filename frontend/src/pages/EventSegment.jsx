@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ChevronLeft, Plus, GripVertical } from "lucide-react";
-import { getEvents, getSegments, createSegment, updateSegment, deleteSegment } from "../api";
+import { getEvents, getSegments, createSegment, updateSegment, deleteSegment, goLive } from "../api";
 import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -26,8 +26,8 @@ const TeamSelector = ({ selected, onChange }) => (
                             )
                         }
                         className={`px-3 py-1.5 rounded-full text-sm font-medium capitalize border transition-colors ${isSelected
-                                ? "bg-dark-teal text-white border-dark-teal"
-                                : "bg-gray-50 text-gray-400 border-gray-200"
+                            ? "bg-dark-teal text-white border-dark-teal"
+                            : "bg-gray-50 text-gray-400 border-gray-200"
                             }`}
                     >
                         {team}
@@ -109,35 +109,35 @@ const EMPTY_SEGMENT_FORM = {
 };
 
 const SegmentFormFields = ({ values, onChangeField, onTeamsChange }) => (
-        <>
-            <input
-                name="title"
-                value={values.title}
-                onChange={onChangeField}
-                placeholder="Segment title"
-                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
-            />
-            <input
-                name="duration_minutes"
-                type="number"
-                value={values.duration_minutes}
-                onChange={onChangeField}
-                placeholder="Duration in minutes"
-                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
-            />
-            <TeamSelector
-                selected={values.teams}
-                onChange={onTeamsChange}
-            />
-            <input
-                name="notes"
-                value={values.notes}
-                onChange={onChangeField}
-                placeholder="Notes (optional)"
-                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
-            />
-        </>
-    );
+    <>
+        <input
+            name="title"
+            value={values.title}
+            onChange={onChangeField}
+            placeholder="Segment title"
+            className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
+        />
+        <input
+            name="duration_minutes"
+            type="number"
+            value={values.duration_minutes}
+            onChange={onChangeField}
+            placeholder="Duration in minutes"
+            className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
+        />
+        <TeamSelector
+            selected={values.teams}
+            onChange={onTeamsChange}
+        />
+        <input
+            name="notes"
+            value={values.notes}
+            onChange={onChangeField}
+            placeholder="Notes (optional)"
+            className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
+        />
+    </>
+);
 
 const EventSegment = () => {
     const { id } = useParams();
@@ -161,6 +161,25 @@ const EventSegment = () => {
     const [editLoading, setEditLoading] = useState(false);
     const [editError, setEditError] = useState("");
 
+    // Live functions
+    const [isLive, setIsLive] = useState(false);
+    const [goLiveLoading, setGoLiveLoading] = useState(false);
+    const [goLiveError, setGoLiveError] = useState("");
+
+    const handleGoLive = async () => {
+        if (goLiveLoading) return;
+        setGoLiveLoading(true);
+        setGoLiveError("");
+        try {
+            await goLive(id);
+            setIsLive(true);
+        } catch (err) {
+            setGoLiveError(err.message || "Failed to go live.");
+        } finally {
+            setGoLiveLoading(false);
+        }
+    };
+
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(TouchSensor, {
@@ -177,6 +196,7 @@ const EventSegment = () => {
             ]);
             const found = allEvents.find((e) => e.id === id);
             setEvent(found || null);
+            setIsLive(found?.is_live || false);
 
             // Normalise teams field from PostgreSQL array string to JS array
             const normalised = segs.map((seg) => ({
@@ -353,6 +373,31 @@ const EventSegment = () => {
                     <span className="bg-white/20 text-white text-xs px-3 py-1 rounded-full">
                         {segments.length} segment{segments.length !== 1 ? "s" : ""}
                     </span>
+
+                    {isAdmin && (
+                        <div className="mt-4">
+                            {isLive ? (
+                                <span className="flex items-center gap-2 text-sm text-white/80 font-medium">
+                                    <span className="relative flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+                                    </span>
+                                    Service is live
+                                </span>
+                            ) : (
+                                <button
+                                    onClick={handleGoLive}
+                                    disabled={goLiveLoading || segments.length === 0}
+                                    className="bg-white/20 hover:bg-white/30 text-white text-sm font-semibold px-4 py-2 rounded-xl disabled:opacity-40 transition-colors"
+                                >
+                                    {goLiveLoading ? "Going live…" : "Go Live"}
+                                </button>
+                            )}
+                            {goLiveError && (
+                                <p className="text-red-300 text-xs mt-2">{goLiveError}</p>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* Order of Service */}
