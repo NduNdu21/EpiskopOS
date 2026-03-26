@@ -11,7 +11,8 @@ export default {
         'dark-teal': '#124559',
         'air-force-blue': '#598392',
         'ash-grey': '#AEC3B0',
-        'beige': '#EFF6E0'
+        'ash-grey-pale': '#D8EAD3',
+        'beige': '#EFF6E0',
       },
     },
   },

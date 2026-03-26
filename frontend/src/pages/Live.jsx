@@ -172,7 +172,7 @@ const Live = () => {
   }
 
   return (
-    <div className="min-h-screen bg-off-white pb-28">
+    <div className="min-h-screen bg-beige pb-28">
 
       {/* Header */}
       <div className="bg-dark-teal px-5 pt-12 pb-6">
@@ -183,8 +183,8 @@ const Live = () => {
           </span>
           <span className="text-xs font-semibold tracking-widest text-red-400 uppercase">Live</span>
         </div>
-        <h1 className="text-off-white text-xl font-bold tracking-tight">{event.title}</h1>
-        <p className="text-off-white/60 text-sm mt-0.5">
+        <h1 className="text-white text-xl font-bold tracking-tight">{event.title}</h1>
+        <p className="text-white/60 text-sm mt-0.5">
           {new Date(event.event_date).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
         </p>
       </div>
@@ -202,15 +202,15 @@ const Live = () => {
           <div className="rounded-2xl bg-dark-teal text-off-white shadow-lg overflow-hidden">
             <div className="px-5 pt-5 pb-4">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-semibold tracking-widest uppercase text-off-white/60">Now</span>
+                <span className="text-xs font-semibold tracking-widest uppercase text-white/60">Now</span>
 
                 {/* Timer */}
                 {secondsLeft !== null && (
                   <span className={`text-sm font-bold tabular-nums rounded-full px-3 py-0.5 ${isOvertime
                     ? "bg-red-500/30 text-red-300"
                     : isElapsed
-                      ? "bg-off-white/10 text-off-white/70"
-                      : "bg-off-white/10 text-off-white"
+                      ? "bg-white/10 text-white/70"
+                      : "bg-white/10 text-white"
                     }`}>
                     {isElapsed
                       ? `${formatTime(secondsLeft)} elapsed`
@@ -224,21 +224,21 @@ const Live = () => {
 
               <h2 className="text-2xl font-bold tracking-tight leading-snug">{activeSegment.title}</h2>
               {activeSegment.description && (
-                <p className="mt-2 text-off-white/70 text-sm leading-relaxed">{activeSegment.description}</p>
+                <p className="mt-2 text-white/70 text-sm leading-relaxed">{activeSegment.description}</p>
               )}
               {activeSegment.teams?.length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-4">
                   {activeSegment.teams.map((team) => (
-                    <span key={team} className="text-xs bg-off-white/15 rounded-full px-3 py-1 text-off-white/90 font-medium">
+                    <span key={team} className="text-xs bg-white/15 rounded-full px-3 py-1 text-white/90 font-medium">
                       {team}
                     </span>
                   ))}
                 </div>
               )}
             </div>
-            <div className="h-1 bg-off-white/10">
+            <div className="h-1 bg-white/10">
               <div
-                className="h-1 bg-off-white/40 transition-all duration-500"
+                className="h-1 bg-white/40 transition-all duration-500"
                 style={{ width: `${segments.length > 1 ? (currentIndex / (segments.length - 1)) * 100 : 100}%` }}
               />
             </div>
@@ -251,20 +251,20 @@ const Live = () => {
 
         {/* Admin controls */}
         {isAdmin && (
-          <div className="rounded-2xl border border-ash-grey/20 bg-white px-4 py-4">
+          <div className="rounded-2xl border border-ash-grey/80 bg-white px-4 py-4">
             <p className="text-xs font-semibold tracking-widest uppercase text-ash-grey mb-3">Controls</p>
             <div className="flex gap-3">
               <button
                 onClick={handlePrev}
                 disabled={actionLoading || currentIndex === 0}
-                className="flex-1 py-3 rounded-xl bg-sage-pale text-ink-black text-sm font-semibold disabled:opacity-40 active:scale-95 transition-transform"
+                className="flex-1 py-3 rounded-xl bg-ash-grey text-ink-black text-sm font-semibold disabled:opacity-40 active:scale-95 transition-transform"
               >
                 ← Prev
               </button>
               <button
                 onClick={handleNext}
                 disabled={actionLoading || currentIndex >= segments.length - 1}
-                className="flex-1 py-3 rounded-xl bg-dark-teal text-off-white text-sm font-semibold disabled:opacity-40 active:scale-95 transition-transform"
+                className="flex-1 py-3 rounded-xl bg-dark-teal text-white text-sm font-semibold disabled:opacity-40 active:scale-95 transition-transform"
               >
                 Next →
               </button>
@@ -289,7 +289,7 @@ const Live = () => {
           <div className="space-y-2">
             <p className="text-xs font-semibold tracking-widest uppercase text-ash-grey px-1">Up next</p>
             {upcomingSegments.map((seg, idx) => (
-              <div key={seg.id} className="rounded-2xl bg-sage-pale border border-sage/30 px-4 py-3.5 flex items-start gap-3">
+              <div key={seg.id} className="rounded-2xl bg-ash-grey-pale border border-ash-grey/30 px-4 py-3.5 flex items-start gap-3">
                 <span className="mt-0.5 w-5 h-5 rounded-full bg-sage/40 flex items-center justify-center text-xs font-bold text-ink-black/60 shrink-0">
                   {currentIndex + idx + 2}
                 </span>
