@@ -1,6 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { getLiveEvent, getSegments, nextSegment, prevSegment, endService } from "../api";
 import { getSocket } from "../socket";
+
+// Format seconds into mm:ss or shows elapsed if no duration
+const formatTime = (seconds) => {
+  const abs = Math.abs(seconds);
+  const m = String(Math.floor(abs / 60)).padStart(2, "0");
+  const s = String(abs % 60).padStart(2, "0");
+  return seconds < 0 ? `+${m}:${s}` : `${m}:${s}`;
+};
 
 const Live = () => {
   const [event, setEvent] = useState(null);
@@ -8,11 +16,12 @@ const Live = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(null);
+  const timerRef = useRef(null);
 
   const token = localStorage.getItem("token");
   const payload = token ? JSON.parse(atob(token.split(".")[1])) : {};
-  const role = payload.role;
-  const isAdmin = role === "admin";
+  const isAdmin = payload.role === "admin";
 
   // Fetch live event + segments
   useEffect(() => {
@@ -62,6 +71,35 @@ const Live = () => {
     };
   }, [event]);
 
+  // Countdown timer
+  useEffect(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+
+    if (!event?.segment_started_at || !activeSegment) {
+      setSecondsLeft(null);
+      return;
+    }
+
+    const tick = () => {
+      const startedAt = new Date(event.segment_started_at).getTime();
+      const now = Date.now();
+      const elapsedSeconds = Math.floor((now - startedAt) / 1000);
+
+      if (activeSegment.duration_minutes) {
+        const totalSeconds = activeSegment.duration_minutes * 60;
+        setSecondsLeft(totalSeconds - elapsedSeconds);
+      } else {
+        // No duration — show elapsed time as positive count-up
+        setSecondsLeft(-elapsedSeconds);
+      }
+    };
+
+    tick();
+    timerRef.current = setInterval(tick, 1000);
+
+    return () => clearInterval(timerRef.current);
+  }, [event?.segment_started_at, event?.current_segment_index, activeSegment]);
+
   const handleNext = async () => {
     if (!event || actionLoading) return;
     setActionLoading(true);
@@ -93,6 +131,10 @@ const Live = () => {
   const upcomingSegments = segments.slice(currentIndex + 1);
   const completedSegments = segments.slice(0, currentIndex);
 
+  // Timer display logic
+  const isOvertime = secondsLeft !== null && activeSegment?.duration_minutes && secondsLeft < 0;
+  const isElapsed = secondsLeft !== null && !activeSegment?.duration_minutes;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-off-white flex items-center justify-center">
@@ -121,7 +163,7 @@ const Live = () => {
   return (
     <div className="min-h-screen bg-off-white pb-28">
 
-      {/* ── Header ── */}
+      {/* Header */}
       <div className="bg-dark-teal px-5 pt-12 pb-6">
         <div className="flex items-center gap-2 mb-1">
           <span className="relative flex h-2.5 w-2.5">
@@ -150,12 +192,26 @@ const Live = () => {
             <div className="px-5 pt-5 pb-4">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-semibold tracking-widest uppercase text-off-white/60">Now</span>
-                {activeSegment.duration_minutes && (
-                  <span className="text-xs bg-off-white/10 rounded-full px-2.5 py-0.5 text-off-white/80">
-                    {activeSegment.duration_minutes} min
+
+                {/* Timer */}
+                {secondsLeft !== null && (
+                  <span className={`text-sm font-bold tabular-nums rounded-full px-3 py-0.5 ${
+                    isOvertime
+                      ? "bg-red-500/30 text-red-300"
+                      : isElapsed
+                      ? "bg-off-white/10 text-off-white/70"
+                      : "bg-off-white/10 text-off-white"
+                  }`}>
+                    {isElapsed
+                      ? `${formatTime(secondsLeft)} elapsed`
+                      : isOvertime
+                      ? `${formatTime(secondsLeft)} over`
+                      : formatTime(secondsLeft)
+                    }
                   </span>
                 )}
               </div>
+
               <h2 className="text-2xl font-bold tracking-tight leading-snug">{activeSegment.title}</h2>
               {activeSegment.description && (
                 <p className="mt-2 text-off-white/70 text-sm leading-relaxed">{activeSegment.description}</p>
@@ -258,6 +314,6 @@ const Live = () => {
       </div>
     </div>
   );
-}
+};
 
-export default Live
+export default Live;
