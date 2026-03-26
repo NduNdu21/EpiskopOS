@@ -304,17 +304,15 @@ exports.goLive = async (req, res) => {
 
     // Notify all clients in this service room
     const io = req.app.get("io");
-    io.to(req.params.id).emit("service_update", {
-      type: "GO_LIVE",
-      event,
-    });
+    io.to(req.params.id).emit("service_update", { type: "GO_LIVE", event });
+    io.to("general").emit("service_update", { type: "GO_LIVE", event });
 
     res.json(event);
   } catch (err) {
     console.error("goLive error:", err.message);
     res.status(500).json({ error: err.message });
   }
-}; 
+};
 
 // Next segment
 exports.nextSegment = async (req, res) => {
@@ -391,10 +389,8 @@ exports.endService = async (req, res) => {
     const event = result.rows[0];
 
     const io = req.app.get("io");
-    io.to(req.params.id).emit("service_update", {
-      type: "END_SERVICE",
-      event,
-    });
+    io.to(req.params.id).emit("service_update", { type: "END_SERVICE", event });
+    io.to("general").emit("service_update", { type: "END_SERVICE", event });
 
     res.json(event);
   } catch (err) {

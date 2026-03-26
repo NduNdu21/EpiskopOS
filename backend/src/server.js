@@ -37,10 +37,16 @@ app.use("/api/users", userRoutes);
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 
-  // Join a service room
+  // Join a specific event room (used by LivePage)
   socket.on("join_service", (eventId) => {
     socket.join(eventId);
     console.log(`Socket ${socket.id} joined service ${eventId}`);
+  });
+
+  // Join general room (used by NavBar to detect live status)
+  socket.on("join_general", () => {
+    socket.join("general");
+    console.log(`Socket ${socket.id} joined general room`);
   });
 
   // Leave a service room
