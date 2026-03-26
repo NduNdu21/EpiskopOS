@@ -7,6 +7,11 @@ async function handleResponse(res) {
   const isJson = res.headers.get("content-type")?.includes("application/json");
   const data = isJson ? await res.json() : null;
   if (!res.ok) {
+    if (res.status === 401) {
+      localStorage.removeItem("token");
+      window.location.href = "/login";
+      return;
+    }
     const message = data?.message || data?.error || res.statusText;
     const err = new Error(message);
     err.status = res.status;
