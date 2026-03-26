@@ -10,6 +10,17 @@ const formatTime = (seconds) => {
   return seconds < 0 ? `+${m}:${s}` : `${m}:${s}`;
 };
 
+//Helper for live service display
+const normaliseSegments = (segs) =>
+  segs.map((seg) => ({
+    ...seg,
+    teams: Array.isArray(seg.teams)
+      ? seg.teams
+      : seg.teams
+      ? seg.teams.replace(/[{}]/g, "").split(",").filter(Boolean)
+      : [],
+  }));
+
 const Live = () => {
   const [event, setEvent] = useState(null);
   const [segments, setSegments] = useState([]);
@@ -23,6 +34,15 @@ const Live = () => {
   const payload = token ? JSON.parse(atob(token.split(".")[1])) : {};
   const isAdmin = payload.role === "admin";
 
+  const currentIndex = event?.current_segment_index ?? 0;
+  const activeSegment = segments[currentIndex] || null;
+  const upcomingSegments = segments.slice(currentIndex + 1);
+  const completedSegments = segments.slice(0, currentIndex);
+
+  // Timer display logic
+  const isOvertime = secondsLeft !== null && activeSegment?.duration_minutes && secondsLeft < 0;
+  const isElapsed = secondsLeft !== null && !activeSegment?.duration_minutes;
+
   // Fetch live event + segments
   useEffect(() => {
     const init = async () => {
@@ -34,7 +54,7 @@ const Live = () => {
         }
         setEvent(liveEvent);
         const segs = await getSegments(liveEvent.id);
-        setSegments(segs);
+        setSegments(normaliseSegments(segs));
       } catch (err) {
         setError(err.message || "Failed to load live service.");
       } finally {
@@ -56,7 +76,7 @@ const Live = () => {
 
       if (type === "GO_LIVE") {
         const segs = await getSegments(updatedEvent.id);
-        setSegments(segs);
+        setSegments(normaliseSegments(segs));
       }
 
       if (type === "END_SERVICE") {
@@ -126,15 +146,6 @@ const Live = () => {
     finally { setActionLoading(false); }
   };
 
-  const currentIndex = event?.current_segment_index ?? 0;
-  const activeSegment = segments[currentIndex] || null;
-  const upcomingSegments = segments.slice(currentIndex + 1);
-  const completedSegments = segments.slice(0, currentIndex);
-
-  // Timer display logic
-  const isOvertime = secondsLeft !== null && activeSegment?.duration_minutes && secondsLeft < 0;
-  const isElapsed = secondsLeft !== null && !activeSegment?.duration_minutes;
-
   if (loading) {
     return (
       <div className="min-h-screen bg-off-white flex items-center justify-center">
@@ -195,18 +206,17 @@ const Live = () => {
 
                 {/* Timer */}
                 {secondsLeft !== null && (
-                  <span className={`text-sm font-bold tabular-nums rounded-full px-3 py-0.5 ${
-                    isOvertime
-                      ? "bg-red-500/30 text-red-300"
-                      : isElapsed
+                  <span className={`text-sm font-bold tabular-nums rounded-full px-3 py-0.5 ${isOvertime
+                    ? "bg-red-500/30 text-red-300"
+                    : isElapsed
                       ? "bg-off-white/10 text-off-white/70"
                       : "bg-off-white/10 text-off-white"
-                  }`}>
+                    }`}>
                     {isElapsed
                       ? `${formatTime(secondsLeft)} elapsed`
                       : isOvertime
-                      ? `${formatTime(secondsLeft)} over`
-                      : formatTime(secondsLeft)
+                        ? `${formatTime(secondsLeft)} over`
+                        : formatTime(secondsLeft)
                     }
                   </span>
                 )}
@@ -302,7 +312,7 @@ const Live = () => {
               <div key={seg.id} className="rounded-2xl bg-ash-grey/8 border border-ash-grey/15 px-4 py-3 flex items-center gap-3 opacity-50">
                 <span className="w-4 h-4 rounded-full border border-ash-grey/40 flex items-center justify-center shrink-0">
                   <svg className="w-2.5 h-2.5 text-ash-grey" fill="none" viewBox="0 0 10 10">
-                    <path d="M2 5l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M2 5l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </span>
                 <p className="text-sm text-ash-grey line-through">{seg.title}</p>
