@@ -23,10 +23,13 @@ export default function NavBar() {
 
   useEffect(() => {
     const socket = getSocket();
+    socket.emit("join_general");
+
     socket.on("service_update", ({ type }) => {
       if (type === "GO_LIVE") setIsLive(true);
       if (type === "END_SERVICE") setIsLive(false);
     });
+
     return () => socket.off("service_update");
   }, []);
 
@@ -46,9 +49,8 @@ export default function NavBar() {
           <Link
             key={label}
             to={path}
-            className={`flex flex-col items-center gap-1 relative ${
-              isActive ? "text-dark-teal" : "text-ink-black"
-            }`}
+            className={`flex flex-col items-center gap-1 relative ${isActive ? "text-dark-teal" : "text-ink-black"
+              }`}
           >
             <div className="relative">
               <Icon size={26} strokeWidth={isActive ? 2.5 : 1.5} />
