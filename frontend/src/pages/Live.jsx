@@ -118,7 +118,7 @@ const Live = () => {
     timerRef.current = setInterval(tick, 1000);
 
     return () => clearInterval(timerRef.current);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [event?.segment_started_at, event?.current_segment_index]);
 
   const handleNext = async () => {
@@ -187,6 +187,9 @@ const Live = () => {
         <h1 className="text-white text-xl font-bold tracking-tight">{event.title}</h1>
         <p className="text-white/60 text-sm mt-0.5">
           {new Date(event.event_date).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
+          {event.started_at && (
+            <> · Started {new Date(event.started_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</>
+          )}
         </p>
       </div>
 
