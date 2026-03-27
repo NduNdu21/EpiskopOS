@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { registerUser } from "../api";
 import { Link, useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 
 const ROLES = ["volunteer", "lighting", "sound", "media", "instrumentalists"];
 
@@ -58,6 +59,8 @@ const Register = () => {
   const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -96,10 +99,9 @@ const Register = () => {
 
   //Styling for all input fields 
   const inputClass = (field) =>
-    `w-full px-6 py-4 rounded-2xl text-beige text-lg placeholder-beige/70 outline-none bg-white/15 border transition-colors ${
-      fieldErrors[field]
-        ? "border-red-400"
-        : "border-beige/60 focus:border-beige"
+    `w-full px-6 py-4 rounded-2xl text-beige text-lg placeholder-beige/70 outline-none bg-white/15 border transition-colors ${fieldErrors[field]
+      ? "border-red-400"
+      : "border-beige/60 focus:border-beige"
     }`;
 
   return (
@@ -149,32 +151,50 @@ const Register = () => {
           {/* Password */}
           <div className="flex flex-col gap-1">
             <label className="sr-only" htmlFor="password">Password</label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              value={form.password}
-              placeholder="Password (min. 8 characters)"
-              onChange={handleChange}
-              autoComplete="new-password"
-              className={inputClass("password")}
-            />
+            <div className="relative">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                value={form.password}
+                placeholder="Password (min. 8 characters)"
+                onChange={handleChange}
+                autoComplete="new-password"
+                className={`${inputClass("password")} pr-14`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-beige/60 hover:text-beige transition-colors"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
             <FieldError message={fieldErrors.password} />
           </div>
 
           {/* Confirm Password */}
           <div className="flex flex-col gap-1">
             <label className="sr-only" htmlFor="confirmPassword">Confirm Password</label>
-            <input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              value={form.confirmPassword}
-              placeholder="Confirm password"
-              onChange={handleChange}
-              autoComplete="new-password"
-              className={inputClass("confirmPassword")}
-            />
+            <div className="relative">
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                value={form.confirmPassword}
+                placeholder="Confirm password"
+                onChange={handleChange}
+                autoComplete="new-password"
+                className={`${inputClass("confirmPassword")} pr-14`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((prev) => !prev)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-beige/60 hover:text-beige transition-colors"
+              >
+                {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
             <FieldError message={fieldErrors.confirmPassword} />
           </div>
 
