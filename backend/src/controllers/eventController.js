@@ -294,7 +294,7 @@ exports.goLive = async (req, res) => {
   try {
     const result = await pool.query(
       `UPDATE events 
-       SET is_live = TRUE, started_at = NOW(), current_segment_index = 0
+       SET is_live = TRUE, started_at = NOW(), current_segment_index = 0, segment_started_at = NOW()
        WHERE id = $1
        RETURNING *`,
       [req.params.id]
@@ -302,7 +302,6 @@ exports.goLive = async (req, res) => {
 
     const event = result.rows[0];
 
-    // Notify all clients in this service room
     const io = req.app.get("io");
     io.to(req.params.id).emit("service_update", { type: "GO_LIVE", event });
     io.to("general").emit("service_update", { type: "GO_LIVE", event });

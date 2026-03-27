@@ -3,11 +3,11 @@ import { getLiveEvent, getSegments, nextSegment, prevSegment, endService } from 
 import { getSocket } from "../socket";
 
 // Format seconds into mm:ss or shows elapsed if no duration
-const formatTime = (seconds) => {
-  const abs = Math.abs(seconds);
+const formatTime = (totalSeconds) => {
+  const abs = Math.abs(totalSeconds);
   const m = String(Math.floor(abs / 60)).padStart(2, "0");
   const s = String(abs % 60).padStart(2, "0");
-  return seconds < 0 ? `+${m}:${s}` : `${m}:${s}`;
+  return `${m}:${s}`;
 };
 
 //Helper for live service display
@@ -17,8 +17,8 @@ const normaliseSegments = (segs) =>
     teams: Array.isArray(seg.teams)
       ? seg.teams
       : seg.teams
-      ? seg.teams.replace(/[{}]/g, "").split(",").filter(Boolean)
-      : [],
+        ? seg.teams.replace(/[{}]/g, "").split(",").filter(Boolean)
+        : [],
   }));
 
 const Live = () => {
@@ -109,8 +109,8 @@ const Live = () => {
         const totalSeconds = activeSegment.duration_minutes * 60;
         setSecondsLeft(totalSeconds - elapsedSeconds);
       } else {
-        // No duration — show elapsed time as positive count-up
-        setSecondsLeft(-elapsedSeconds);
+        // No duration — count up (positive number = elapsed)
+        setSecondsLeft(elapsedSeconds);
       }
     };
 
@@ -118,7 +118,8 @@ const Live = () => {
     timerRef.current = setInterval(tick, 1000);
 
     return () => clearInterval(timerRef.current);
-  }, [event?.segment_started_at, event?.current_segment_index, activeSegment]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [event?.segment_started_at, event?.current_segment_index]);
 
   const handleNext = async () => {
     if (!event || actionLoading) return;
@@ -208,14 +209,12 @@ const Live = () => {
                 {secondsLeft !== null && (
                   <span className={`text-sm font-bold tabular-nums rounded-full px-3 py-0.5 ${isOvertime
                     ? "bg-red-500/30 text-red-300"
-                    : isElapsed
-                      ? "bg-white/10 text-white/70"
-                      : "bg-white/10 text-white"
+                    : "bg-white/10 text-white"
                     }`}>
-                    {isElapsed
-                      ? `${formatTime(secondsLeft)} elapsed`
-                      : isOvertime
-                        ? `${formatTime(secondsLeft)} over`
+                    {isOvertime
+                      ? `${formatTime(secondsLeft)} over`
+                      : isElapsed
+                        ? `${formatTime(secondsLeft)} elapsed`
                         : formatTime(secondsLeft)
                     }
                   </span>
@@ -235,12 +234,6 @@ const Live = () => {
                   ))}
                 </div>
               )}
-            </div>
-            <div className="h-1 bg-white/10">
-              <div
-                className="h-1 bg-white/40 transition-all duration-500"
-                style={{ width: `${segments.length > 1 ? (currentIndex / (segments.length - 1)) * 100 : 100}%` }}
-              />
             </div>
           </div>
         ) : (
