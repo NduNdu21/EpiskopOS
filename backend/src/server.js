@@ -6,24 +6,43 @@ const http = require("http");
 const { Server } = require("socket.io");
 
 const app = express();
-const server = http.createServer(app); // wrap express in http server
+const server = http.createServer(app);
 
+
+// Dynamic CORS for Codespaces
+const codespace = process.env.CODESPACE_NAME;
+
+// If running in Codespaces, generate correct HTTPS origin
+const allowedOrigin = codespace
+  ? `https://${codespace}-5173.app.github.dev`
+  : "http://localhost:5173";
+
+console.log("Allowed Origin:", allowedOrigin);
+
+// Express CORS
+app.use(
+  cors({
+    origin: allowedOrigin,
+    credentials: true,
+  })
+);
+
+// Socket.IO CORS
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: allowedOrigin,
     methods: ["GET", "POST"],
   },
 });
 
-const port = process.env.PORT || 5000;
-
-app.use(cors({ origin: "http://localhost:5173", credentials: true})); 
+// Middleware
 app.use(express.json());
 
-// Make io accessible in controllers
+// Make io available in controllers
 app.set("io", io);
 
-// Register routes
+
+// Routes
 const authRoutes = require("./routes/authRoutes");
 app.use("/api/auth", authRoutes);
 
@@ -33,23 +52,23 @@ app.use("/api/events", eventRoutes);
 const userRoutes = require("./routes/userRoutes");
 app.use("/api/users", userRoutes);
 
-// Socket connection
+// Socket.IO Events
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 
-  // Join a specific event room (used by LivePage)
+  // Join a live service
   socket.on("join_service", (eventId) => {
     socket.join(eventId);
     console.log(`Socket ${socket.id} joined service ${eventId}`);
   });
 
-  // Join general room (used by NavBar to detect live status)
+  // General room for Navbar live detection
   socket.on("join_general", () => {
     socket.join("general");
     console.log(`Socket ${socket.id} joined general room`);
   });
 
-  // Leave a service room
+  // Leave service room
   socket.on("leave_service", (eventId) => {
     socket.leave(eventId);
     console.log(`Socket ${socket.id} left service ${eventId}`);
@@ -60,7 +79,9 @@ io.on("connection", (socket) => {
   });
 });
 
-// Use server.listen instead of app.listen
+// Start Server
+const port = process.env.PORT;
+
 server.listen(port, "0.0.0.0", async () => {
   try {
     const res = await pool.query("SELECT NOW()");
@@ -68,5 +89,6 @@ server.listen(port, "0.0.0.0", async () => {
   } catch (err) {
     console.error("DB error:", err);
   }
+
   console.log(`Server running on http://0.0.0.0:${port}`);
 });
