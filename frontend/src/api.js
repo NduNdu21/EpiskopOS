@@ -241,14 +241,27 @@ export const endService = async (eventId) => {
 };
 
 // Messages 
-export const getMessages = (params = {}) => {
+export const getMessages = async (params = {}) => {
+  const token = localStorage.getItem("token");
   const query = new URLSearchParams();
-  if (params.scope) query.append('scope', params.scope);
-  if (params.team_target) query.append('team_target', params.team_target);
-  if (params.event_id) query.append('event_id', params.event_id);
-  return apiFetch(`/api/messages?${query.toString()}`);
+  if (params.scope) query.append("scope", params.scope);
+  if (params.team_target) query.append("team_target", params.team_target);
+  if (params.event_id) query.append("event_id", params.event_id);
+  const res = await fetch(`${API_BASE}/messages?${query.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return handleResponse(res);
 };
 
-export const sendMessage = (data) => {
-  apiFetch('/api/messages', { method: 'POST', body: JSON.stringify(data) });
+export const sendMessage = async (data) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_BASE}/messages`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  return handleResponse(res);
 };
