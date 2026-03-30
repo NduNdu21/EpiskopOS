@@ -239,3 +239,16 @@ export const endService = async (eventId) => {
   });
   return handleResponse(res);
 };
+
+// Messages 
+export const getMessages = (params = {}) => {
+  const query = new URLSearchParams();
+  if (params.scope) query.append('scope', params.scope);
+  if (params.team_target) query.append('team_target', params.team_target);
+  if (params.event_id) query.append('event_id', params.event_id);
+  return apiFetch(`/api/messages?${query.toString()}`);
+};
+
+export const sendMessage = (data) => {
+  apiFetch('/api/messages', { method: 'POST', body: JSON.stringify(data) });
+};
