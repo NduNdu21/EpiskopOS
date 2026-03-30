@@ -8,39 +8,39 @@ const { Server } = require("socket.io");
 const app = express();
 const server = http.createServer(app);
 
+// Build allowed origins
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+];
 
-// Dynamic CORS for Codespaces
-const codespace = process.env.CODESPACE_NAME;
+if (process.env.CODESPACE_NAME) {
+  allowedOrigins.push(`https://${process.env.CODESPACE_NAME}-5173.app.github.dev`);
+}
 
-// If running in Codespaces, generate correct HTTPS origin
-const allowedOrigin = codespace
-  ? `https://${codespace}-5173.app.github.dev`
-  : "http://localhost:5173";
+/* Optional: add a non-secret frontend URL if you deploy later
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}*/
 
-console.log("Allowed Origin:", allowedOrigin);
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin) return callback(null, true); // Postman/curl
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
 
-// Express CORS
-app.use(
-  cors({
-    origin: allowedOrigin,
-    credentials: true,
-  })
-);
+app.use(cors(corsOptions));
 
 // Socket.IO CORS
-const io = new Server(server, {
-  cors: {
-    origin: allowedOrigin,
-    methods: ["GET", "POST"],
-  },
-});
+const io = new Server(server, { cors: corsOptions });
 
-// Middleware
 app.use(express.json());
-
-// Make io available in controllers
 app.set("io", io);
-
 
 // Routes
 const authRoutes = require("./routes/authRoutes");
@@ -52,36 +52,16 @@ app.use("/api/events", eventRoutes);
 const userRoutes = require("./routes/userRoutes");
 app.use("/api/users", userRoutes);
 
-// Socket.IO Events
+// Socket.IO events...
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
-
-  // Join a live service
-  socket.on("join_service", (eventId) => {
-    socket.join(eventId);
-    console.log(`Socket ${socket.id} joined service ${eventId}`);
-  });
-
-  // General room for Navbar live detection
-  socket.on("join_general", () => {
-    socket.join("general");
-    console.log(`Socket ${socket.id} joined general room`);
-  });
-
-  // Leave service room
-  socket.on("leave_service", (eventId) => {
-    socket.leave(eventId);
-    console.log(`Socket ${socket.id} left service ${eventId}`);
-  });
-
-  socket.on("disconnect", () => {
-    console.log("Client disconnected:", socket.id);
-  });
+  socket.on("join_service", (eventId) => socket.join(eventId));
+  socket.on("join_general", () => socket.join("general"));
+  socket.on("leave_service", (eventId) => socket.leave(eventId));
+  socket.on("disconnect", () => console.log("Client disconnected:", socket.id));
 });
 
-// Start Server
-const port = process.env.PORT;
-
+const port = process.env.PORT || 5000;
 server.listen(port, "0.0.0.0", async () => {
   try {
     const res = await pool.query("SELECT NOW()");
@@ -89,6 +69,5 @@ server.listen(port, "0.0.0.0", async () => {
   } catch (err) {
     console.error("DB error:", err);
   }
-
   console.log(`Server running on http://0.0.0.0:${port}`);
 });
