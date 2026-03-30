@@ -62,9 +62,35 @@ app.use("/api/messages", messageRoutes);
 // Socket.IO events...
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
+
   socket.on("join_service", (eventId) => socket.join(eventId));
   socket.on("join_general", () => socket.join("general"));
   socket.on("leave_service", (eventId) => socket.leave(eventId));
+
+  socket.on("join_rooms", ({ role }) => {
+    socket.join("broadcast");
+
+    const teamMap = {
+      sound_volunteer: "team:sound",
+      lights_volunteer: "team:lights",
+      media_volunteer: "team:media",
+      worship_volunteer: "team:worship",
+      sound_lead: "team:sound",
+      lights_lead: "team:lights",
+      media_lead: "team:media",
+      worship_lead: "team:worship",
+    };
+
+    const teamRoom = teamMap[role];
+    if (teamRoom) socket.join(teamRoom);
+
+    if (role === "admin" || role === "team_lead") {
+      ["team:sound", "team:lights", "team:media", "team:worship"].forEach((room) => {
+        socket.join(room);
+      });
+    }
+  });
+
   socket.on("disconnect", () => console.log("Client disconnected:", socket.id));
 });
 
