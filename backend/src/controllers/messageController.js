@@ -15,8 +15,7 @@ exports.getMessages = async (req, res) => {
         m.team_target,
         m.event_id,
         m.created_at,
-        u.first_name,
-        u.last_name,
+        u.name AS sender_name,
         u.role AS sender_role
       FROM messages m
       JOIN users u ON m.sender_id = u.id
@@ -88,7 +87,7 @@ exports.createMessage = async (req, res) => {
     const inserted = result.rows[0];
 
     const senderResult = await pool.query(
-      `SELECT first_name, last_name, role FROM users WHERE id = $1`,
+      `SELECT name, role FROM users WHERE id = $1`,
       [sender_id]
     );
 
@@ -96,8 +95,7 @@ exports.createMessage = async (req, res) => {
 
     const payload = {
       ...inserted,
-      first_name: sender.first_name,
-      last_name: sender.last_name,
+      sender_name: sender.name,
       sender_role: sender.role,
     };
 
