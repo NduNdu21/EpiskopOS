@@ -1,4 +1,4 @@
-const pool = require('../db');
+const pool = require('../config/db');
 
 exports.getMessages = async (req, res) => {
   const { scope, team_target, event_id } = req.query;

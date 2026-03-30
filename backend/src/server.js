@@ -52,6 +52,13 @@ app.use("/api/events", eventRoutes);
 const userRoutes = require("./routes/userRoutes");
 app.use("/api/users", userRoutes);
 
+const messageRoutes = require("./routes/messageRoutes");
+app.use((req, res, next) => {
+  req.io = io; // Attach Socket.IO instance to request
+  next();
+});
+app.use("/api/messages", messageRoutes);
+
 // Socket.IO events...
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
