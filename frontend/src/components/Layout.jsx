@@ -7,11 +7,11 @@ export default function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-beige flex flex-col">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Header */}
-      <div className="flex items-center justify-between px-6 pt-6 pb-2">
+      <div className="flex items-center justify-between px-6 pt-6 pb-6 flex-shrink-0 bg-off-white">
         <button className="text-ink-black" onClick={() => setSidebarOpen(true)}>
           <Menu size={28} />
         </button>

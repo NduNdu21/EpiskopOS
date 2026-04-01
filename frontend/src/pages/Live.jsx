@@ -149,8 +149,8 @@ const Live = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-off-white flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
+      <div className="min-h-screen">
+        <div className="items-center gap-3">
           <div className="w-8 h-8 rounded-full border-2 border-dark-teal border-t-transparent animate-spin" />
           <p className="text-sm text-ash-grey font-medium tracking-wide">Checking for live service…</p>
         </div>
@@ -176,7 +176,7 @@ const Live = () => {
     <div className="min-h-screen bg-beige pb-28">
 
       {/* Header */}
-      <div className="bg-dark-teal px-5 pt-12 pb-6">
+      <div className="px-5 pt-4 pb-6">
         <div className="flex items-center gap-2 mb-1">
           <span className="relative flex h-2.5 w-2.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
@@ -184,8 +184,8 @@ const Live = () => {
           </span>
           <span className="text-xs font-semibold tracking-widest text-red-400 uppercase">Live</span>
         </div>
-        <h1 className="text-white text-xl font-bold tracking-tight">{event.title}</h1>
-        <p className="text-white/60 text-sm mt-0.5">
+        <h1 className="text-dark-teal text-xl font-bold tracking-tight">{event.title}</h1>
+        <p className="text-dark-teal/80 text-sm mt-0.5">
           {new Date(event.event_date).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
           {event.started_at && (
             <> · Started {new Date(event.started_at).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</>
@@ -247,8 +247,8 @@ const Live = () => {
 
         {/* Admin controls */}
         {isAdmin && (
-          <div className="rounded-2xl border border-ash-grey/80 bg-white px-4 py-4">
-            <p className="text-xs font-semibold tracking-widest uppercase text-ash-grey mb-3">Controls</p>
+          <div className="rounded-2xl border border-ash-grey bg-white px-4 py-4">
+            <p className="text-xs font-semibold tracking-widest uppercase text-dark-teal/80 mb-3">Controls</p>
             <div className="flex gap-3">
               <button
                 onClick={handlePrev}
@@ -276,14 +276,14 @@ const Live = () => {
         )}
 
         {/* Segment counter */}
-        <div className="text-xs font-semibold tracking-widest uppercase text-ash-grey px-1">
+        <div className="text-xs font-semibold tracking-widest uppercase text-dark-teal/80 px-1">
           {currentIndex + 1} / {segments.length} segments
         </div>
 
         {/* Upcoming segments */}
         {upcomingSegments.length > 0 && (
           <div className="space-y-2">
-            <p className="text-xs font-semibold tracking-widest uppercase text-ash-grey px-1">Up next</p>
+            <p className="text-xs font-semibold tracking-widest uppercase text-dark-teal/80 px-1">Up next</p>
             {upcomingSegments.map((seg, idx) => (
               <div key={seg.id} className="rounded-2xl bg-ash-grey-pale border border-ash-grey/30 px-4 py-3.5 flex items-start gap-3">
                 <span className="mt-0.5 w-5 h-5 rounded-full bg-sage/40 flex items-center justify-center text-xs font-bold text-ink-black/60 shrink-0">
@@ -292,7 +292,7 @@ const Live = () => {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-ink-black truncate">{seg.title}</p>
                   {seg.duration_minutes && (
-                    <p className="text-xs text-ash-grey mt-0.5">{seg.duration_minutes} min</p>
+                    <p className="text-xs text-dark-teal/80 mt-0.5">{seg.duration_minutes} min</p>
                   )}
                 </div>
               </div>

@@ -296,7 +296,7 @@ const Events = () => {
     const monthLabel = `${MONTH_NAMES[weekStart.getMonth()]} ${weekStart.getFullYear()}`;
 
     return (
-        <div className="bg-beige flex flex-col">
+        <div className="min-h-full flex flex-col">
 
             {/* Calendar Strip */}
             <div className="px-6 pb-4">

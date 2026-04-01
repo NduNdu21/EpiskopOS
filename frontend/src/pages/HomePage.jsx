@@ -77,11 +77,7 @@ const HomePage = () => {
   const userTeam = TEAM_FROM_ROLE[user?.role] || null;
 
   return (
-    <div className="bg-ash-grey flex flex-col">
-
-      {/* Main Content */}
-      <div className="flex-1 px-6 pt-6 pb-24 overflow-y-auto space-y-3">
-
+    <div className="min-h-screen px-6 pt-6 space-y-3">
         {/* Greeting + role badge */}
         <div>
           <h1 className="text-4xl font-bold text-ink-black">
@@ -136,13 +132,13 @@ const HomePage = () => {
 
         {/* Latest Broadcast */}
         <Link to="/messages" className="block">
-          <div className="bg-sage/20 border border-sage/40 rounded-2xl px-5 py-4">
+          <div className="bg-ash-grey/20 border border-dark-teal/60 rounded-2xl px-5 py-4">
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-semibold text-dark-teal uppercase tracking-widest">
                 Latest Broadcast
               </p>
               {latestBroadcast && (
-                <span className="text-[10px] text-ash-grey">
+                <span className="text-[10px] text-dark-teal/80">
                   {formatTime(latestBroadcast.created_at)}
                 </span>
               )}
@@ -154,7 +150,7 @@ const HomePage = () => {
                 <p className="text-ink-black text-sm leading-snug line-clamp-2">
                   {latestBroadcast.content}
                 </p>
-                <p className="text-ash-grey text-xs mt-1">
+                <p className="text-dark-teal/80 text-xs mt-1">
                   {latestBroadcast.sender_name}
                 </p>
               </>
@@ -199,8 +195,6 @@ const HomePage = () => {
             </div>
           </Link>
         )}
-
-      </div>
     </div>
   );
 };
