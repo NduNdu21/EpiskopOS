@@ -59,6 +59,10 @@ app.use((req, res, next) => {
 });
 app.use("/api/messages", messageRoutes);
 
+//attendance routes
+const attendanceRoutes = require('./routes/attendanceRoutes');
+app.use('/api/attendance', attendanceRoutes);
+
 // Socket.IO events...
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
