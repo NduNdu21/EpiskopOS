@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Menu } from "lucide-react";
-import Sidebar from "../components/Sidebar";
 import { getCurrentAndNext, getMe, getMessages } from "../api";
 
 const formatServiceDate = (event) => {
@@ -41,7 +39,6 @@ const TEAM_FROM_ROLE = {
 };
 
 const HomePage = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [upNext, setUpNext] = useState(null);
   const [latestBroadcast, setLatestBroadcast] = useState(null);
@@ -80,17 +77,7 @@ const HomePage = () => {
   const userTeam = TEAM_FROM_ROLE[user?.role] || null;
 
   return (
-    <div className="min-h-screen bg-ash-grey flex flex-col">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-      {/* Top Bar */}
-      <div className="flex items-center justify-between px-6 pt-6 pb-2">
-        <button className="text-ink-black" onClick={() => setSidebarOpen(true)}>
-          <Menu size={28} />
-        </button>
-        <h2 className="text-lg font-semibold text-ink-black">EpiskopOS</h2>
-        <div className="w-7"></div>
-      </div>
+    <div className="bg-ash-grey flex flex-col">
 
       {/* Main Content */}
       <div className="flex-1 px-6 pt-6 pb-24 overflow-y-auto space-y-3">

@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu, ChevronLeft, ChevronRight, Plus, Pencil } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Pencil } from "lucide-react";
 import { getEvents, createEvent, updateEvent, deleteEvent } from "../api";
-import Sidebar from "../components/Sidebar";
 
 // Helper: get the Monday of the week containing a given date
 const getWeekStart = (date) => {
@@ -134,7 +133,6 @@ const Events = () => {
     const navigate = useNavigate();
     const role = localStorage.getItem("role");
     const isAdmin = role === "admin";
-    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -298,18 +296,7 @@ const Events = () => {
     const monthLabel = `${MONTH_NAMES[weekStart.getMonth()]} ${weekStart.getFullYear()}`;
 
     return (
-        <div className="min-h-screen bg-beige flex flex-col">
-
-            <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-            {/* Top Bar */}
-            <div className="flex items-center justify-between px-6 pt-6 pb-4">
-                <button className="text-ink-black" onClick={() => setSidebarOpen(true)}>
-                    <Menu size={26} />
-                </button>
-                <h1 className="text-lg font-bold text-ink-black">EpiskopOS</h1>
-                <div className="w-6" />
-            </div>
+        <div className="bg-beige flex flex-col">
 
             {/* Calendar Strip */}
             <div className="px-6 pb-4">
