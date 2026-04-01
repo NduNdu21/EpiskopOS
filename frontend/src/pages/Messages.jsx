@@ -135,7 +135,7 @@ const Messages = () => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] bg-off-white">
+    <div className="flex flex-col h-[calc(85vh-16px)] bg-white">
 
       {/* Filter chips */}
       <div className="flex gap-2 px-4 py-3 overflow-x-auto border-b border-ash-grey/30 bg-white flex-shrink-0">
