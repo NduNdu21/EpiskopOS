@@ -25,7 +25,8 @@ This is a final-year Computer Science project (CS3IP) at Aston University, super
 | Layer       | Technology                        |
 |-------------|-----------------------------------|
 | Frontend    | React + Vite + Tailwind CSS       |
-| Backend     | Node.js + Express                 |
+| Backend     | Node.js + Express (MVC)           |
+| Real-time   | Socket.IO                         |
 | Database    | PostgreSQL (via Supabase)         |
 | Auth        | JWT (stored in localStorage)      |
 | Dev Env     | GitHub Codespaces                 |
