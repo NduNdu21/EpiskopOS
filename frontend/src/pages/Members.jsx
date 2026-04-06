@@ -54,14 +54,12 @@ export default function Members() {
         setLoading(true);
         try {
             const uRes = await apiFetch('/users');
-            console.log('users status:', uRes.status, uRes.headers.get('content-type'));
             const uData = await uRes.json();
             const meData = await getMe();
             setUsers(uData);
             setMe(meData);
 
             const eRes = await apiFetch('/events/live');
-            console.log('live status:', eRes.status, eRes.headers.get('content-type'));
             if (eRes.ok && eRes.headers.get('content-type')?.includes('application/json')) {
                 const liveEvent = await eRes.json();
                 if (liveEvent?.id) {
@@ -285,9 +283,9 @@ function UserCard({
                     </select>
                 ) : (
                     <span
-                        className={`inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-medium ${ROLE_COLORS[user.user_role]}`}
+                        className={`inline-block mt-1 text-xs px-2 py-0.5 rounded-full font-medium ${ROLE_COLORS[user.role]}`}
                     >
-                        {ROLE_LABELS[user.user_role]}
+                        {ROLE_LABELS[user.role]}
                     </span>
                 )}
             </div>
