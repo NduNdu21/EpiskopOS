@@ -194,7 +194,7 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen px-6 pt-6 md:px-10 md:pt-8">
-      
+
       {/* Greeting + role badge */}
       <div className="mb-6 md:mb-10 space-y-2">
         <h1 className="text-4xl md:text-5xl font-bold text-ink-black">
@@ -250,7 +250,7 @@ const HomePage = () => {
                 )}
                 {upNext.duration_hours && (
                   <p className="text-ink-black/50 text-sm md:text-base mt-0.5">
-                    ⏱ {upNext.duration_hours} hr
+                    ⏱ {upNext.duration_hours} hour(s)
                   </p>
                 )}
               </>
