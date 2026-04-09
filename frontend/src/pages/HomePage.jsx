@@ -29,9 +29,9 @@ const formatDateTime = (ts) => {
 };
 
 const TEAM_FROM_ROLE = {
-  sound_volunteer: "sound",
-  lights_volunteer: "lights",
-  media_volunteer: "media",
+  sound: "sound",
+  lighting: "lights",
+  media: "media",
   worship_volunteer: "worship",
   sound_lead: "sound",
   lights_lead: "lights",
