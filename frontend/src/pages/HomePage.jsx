@@ -230,59 +230,64 @@ const HomePage = () => {
             </div>
           </div>
 
-          {/* Next Service card */}
-          <div className="bg-white/70 rounded-2xl px-5 py-4 md:px-6 md:py-5 shadow-sm">
-            <p className="text-xs md:text-sm font-semibold text-ink-black/50 uppercase tracking-widest mb-1 md:mb-2">
-              Next Service
-            </p>
-            {loading ? (
-              <p className="text-ink-black text-lg md:text-xl font-semibold">Loading...</p>
-            ) : upNext ? (
-              <>
-                <p className="text-ink-black text-xl md:text-2xl font-bold">{upNext.title}</p>
-                <p className="text-ink-black/60 text-sm md:text-base mt-0.5 md:mt-1">
-                  {formatServiceDate(upNext)}
-                </p>
-                {upNext.location && (
-                  <p className="text-ink-black/50 text-sm md:text-base mt-0.5">
-                    📍 {upNext.location}
-                  </p>
-                )}
-                {upNext.duration_hours && (
-                  <p className="text-ink-black/50 text-sm md:text-base mt-0.5">
-                    ⏱ {upNext.duration_hours} hour(s)
-                  </p>
-                )}
-              </>
-            ) : (
-              <p className="text-ink-black/60 text-sm md:text-base">No upcoming services</p>
-            )}
-          </div>
+          {/* Next Service + Assignment — side by side on desktop */}
+          <div className="md:h-56 md:grid md:grid-cols-2 md:gap-4 space-y-4 md:space-y-0">
 
-          {/* Your Assignment card */}
-          <div className="bg-white/70 rounded-2xl px-5 py-4 md:px-6 md:py-5 shadow-sm">
-            <p className="text-xs md:text-sm font-semibold text-ink-black/50 uppercase tracking-widest mb-1 md:mb-2">
-              Your Assignment
-            </p>
-            {loading ? (
-              <p className="text-ink-black text-lg md:text-xl font-semibold">Loading...</p>
-            ) : user?.role && user.role !== "volunteer" ? (
-              <>
-                <p className="text-ink-black text-xl md:text-2xl font-bold">
-                  {capitalise(user.role)} Team
-                </p>
-                <p className="text-ink-black/60 text-sm md:text-base mt-0.5 md:mt-1">
-                  {capitalise(user.role)} team member
-                </p>
-                {upNext && (
-                  <p className="text-ink-black/50 text-sm md:text-base mt-0.5">
-                    Next up: {upNext.title}
+            {/* Next Service card */}
+            <div className="bg-white/70 rounded-2xl px-5 py-4 md:px-5 md:py-5 shadow-sm">
+              <p className="text-xs md:text-sm font-semibold text-ink-black/50 uppercase tracking-widest mb-1 md:mb-2">
+                Next Service
+              </p>
+              {loading ? (
+                <p className="text-ink-black text-lg md:text-xl font-semibold">Loading...</p>
+              ) : upNext ? (
+                <>
+                  <p className="text-ink-black text-xl md:text-xl font-bold leading-snug">{upNext.title}</p>
+                  <p className="text-ink-black/60 text-sm md:text-sm mt-0.5 md:mt-1">
+                    {formatServiceDate(upNext)}
                   </p>
-                )}
-              </>
-            ) : (
-              <p className="text-ink-black/60 text-sm md:text-base mt-0.5">No assignment yet</p>
-            )}
+                  {upNext.location && (
+                    <p className="text-ink-black/50 text-sm mt-0.5">
+                      📍 {upNext.location}
+                    </p>
+                  )}
+                  {upNext.duration_hours && (
+                    <p className="text-ink-black/50 text-sm mt-0.5">
+                      ⏱ {upNext.duration_hours} hr
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="text-ink-black/60 text-sm">No upcoming services</p>
+              )}
+            </div>
+
+            {/* Your Assignment card */}
+            <div className="bg-white/70 rounded-2xl px-5 py-4 md:px-5 md:py-5 shadow-sm">
+              <p className="text-xs md:text-sm font-semibold text-ink-black/50 uppercase tracking-widest mb-1 md:mb-2">
+                Your Assignment
+              </p>
+              {loading ? (
+                <p className="text-ink-black text-lg md:text-xl font-semibold">Loading...</p>
+              ) : user?.role && user.role !== "volunteer" ? (
+                <>
+                  <p className="text-ink-black text-xl md:text-xl font-bold leading-snug">
+                    {capitalise(user.role)} Team
+                  </p>
+                  <p className="text-ink-black/60 text-sm mt-0.5 md:mt-1">
+                    {capitalise(user.role)} team member
+                  </p>
+                  {upNext && (
+                    <p className="text-ink-black/50 text-sm mt-0.5">
+                      Next up: {upNext.title}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="text-ink-black/60 text-sm mt-0.5">No assignment yet</p>
+              )}
+            </div>
+
           </div>
 
           {/* Mobile message cards */}
