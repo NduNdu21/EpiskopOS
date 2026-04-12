@@ -26,6 +26,15 @@ exports.createEvent = async (req, res) => {
     return res.status(400).json({ message: "Title and date are required" });
   }
   try {
+    // Check for duplicate event at same date and time
+    const duplicate = await pool.query(
+      `SELECT id FROM events WHERE event_date = $1`,
+      [event_date]
+    );
+    if (duplicate.rows.length > 0) {
+      return res.status(409).json({ message: "An event already exists at this date and time." });
+    }
+
     const result = await pool.query(
       `INSERT INTO events (title, description, event_date, location, duration_hours, priority, created_by)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
