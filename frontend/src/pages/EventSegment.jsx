@@ -117,14 +117,23 @@ const SegmentFormFields = ({ values, onChangeField, onTeamsChange }) => (
             placeholder="Segment title"
             className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
         />
-        <input
-            name="duration_minutes"
-            type="number"
-            value={values.duration_minutes}
-            onChange={onChangeField}
-            placeholder="Duration in minutes"
-            className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
-        />
+        <div className="flex flex-col gap-1">
+            <input
+                name="duration_minutes"
+                type="number"
+                value={values.duration_minutes}
+                onChange={onChangeField}
+                placeholder="Duration in minutes"
+                className="border border-gray-200 rounded-xl px-4 py-3 text-ink-black outline-none focus:border-dark-teal"
+            />
+            {values.duration_minutes !== "" && (
+                Number(values.duration_minutes) < 2 ? (
+                    <p className="text-amber-500 text-xs pl-1">That seems very short — are you sure?</p>
+                ) : Number(values.duration_minutes) > 120 ? (
+                    <p className="text-amber-500 text-xs pl-1">That seems very long — are you sure?</p>
+                ) : null
+            )}
+        </div>
         <TeamSelector
             selected={values.teams}
             onChange={onTeamsChange}
