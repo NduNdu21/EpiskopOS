@@ -286,7 +286,11 @@ const EventSegment = () => {
             setEditingSegment(null);
             fetchData();
         } catch (err) {
-            setEditError(err.message || "Failed to update segment.");
+            if (!navigator.onLine || err.message === "Failed to fetch") {
+                setEditError("Network error — check your connection and try again.");
+            } else {
+                setEditError(err.message || "Failed to save changes. Please try again.");
+            }
         } finally {
             setEditLoading(false);
         }
@@ -300,7 +304,11 @@ const EventSegment = () => {
             setEditingSegment(null);
             fetchData();
         } catch (err) {
-            setEditError(err.message || "Failed to delete segment.");
+            if (!navigator.onLine || err.message === "Failed to fetch") {
+                setEditError("Network error — check your connection and try again.");
+            } else {
+                setEditError(err.message || "Failed to delete segment. Please try again.");
+            }
         } finally {
             setEditLoading(false);
         }
@@ -323,7 +331,11 @@ const EventSegment = () => {
             setShowForm(false);
             fetchData();
         } catch (err) {
-            setFormError(err.message || "Failed to create segment.");
+            if (!navigator.onLine || err.message === "Failed to fetch") {
+                setFormError("Network error — check your connection and try again.");
+            } else {
+                setFormError(err.message || "Failed to add segment. Please try again.");
+            }
         } finally {
             setFormLoading(false);
         }
