@@ -63,7 +63,7 @@ app.use("/api/messages", messageRoutes);
 const attendanceRoutes = require('./routes/attendanceRoutes');
 app.use('/api/attendance', attendanceRoutes);
 
-// Socket.IO events...
+// Socket.io for events:
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 
@@ -78,11 +78,6 @@ io.on("connection", (socket) => {
       sound_volunteer: "team:sound",
       lights_volunteer: "team:lights",
       media_volunteer: "team:media",
-      worship_volunteer: "team:worship",
-      sound_lead: "team:sound",
-      lights_lead: "team:lights",
-      media_lead: "team:media",
-      worship_lead: "team:worship",
     };
 
     const teamRoom = teamMap[role];
