@@ -83,8 +83,8 @@ io.on("connection", (socket) => {
     const teamRoom = teamMap[role];
     if (teamRoom) socket.join(teamRoom);
 
-    if (role === "admin" || role === "team_lead") {
-      ["team:sound", "team:lights", "team:media", "team:worship"].forEach((room) => {
+    if (role === "admin") {
+      ["team:sound", "team:lights", "team:media"].forEach((room) => {
         socket.join(room);
       });
     }
