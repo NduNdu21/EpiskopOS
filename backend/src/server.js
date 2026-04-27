@@ -18,10 +18,10 @@ if (process.env.CODESPACE_NAME) {
   allowedOrigins.push(`https://${process.env.CODESPACE_NAME}-5173.app.github.dev`);
 }
 
-/* Optional: add a non-secret frontend URL if you deploy later
+//Optional: add a non-secret frontend URL if you deploy later
 if (process.env.FRONTEND_URL) {
   allowedOrigins.push(process.env.FRONTEND_URL);
-}*/
+}
 
 const corsOptions = {
   origin(origin, callback) {
