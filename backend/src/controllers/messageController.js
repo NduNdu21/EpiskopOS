@@ -119,14 +119,9 @@ exports.cleanupMessages = async (req, res) => {
 };
 const getTeamFromRole = (role) => {
   const map = {
-    sound_volunteer: 'sound',
-    lights_volunteer: 'lights',
-    media_volunteer: 'media',
-    worship_volunteer: 'worship',
-    sound_lead: 'sound',
-    lights_lead: 'lights',
-    media_lead: 'media',
-    worship_lead: 'worship',
+    sound: 'sound',
+    lighting: 'lighting',
+    media: 'media',
   };
   return map[role] || null;
 };
