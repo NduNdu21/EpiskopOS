@@ -413,7 +413,7 @@ exports.getLiveEvent = async (req, res) => {
     const result = await pool.query(
       `SELECT * FROM events 
        WHERE is_live = TRUE 
-       AND DATE(event_date) = CURRENT_DATE
+       ORDER BY started_at DESC
        LIMIT 1`
     );
     res.json(result.rows[0] || null);
