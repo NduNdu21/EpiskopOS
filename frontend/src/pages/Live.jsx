@@ -118,8 +118,7 @@ const Live = () => {
     timerRef.current = setInterval(tick, 1000);
 
     return () => clearInterval(timerRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [event?.segment_started_at, event?.current_segment_index]);
+  }, [event?.segment_started_at, event?.current_segment_index, activeSegment?.id]);
 
   const handleNext = async () => {
     if (!event || actionLoading) return;
