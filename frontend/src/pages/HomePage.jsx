@@ -32,11 +32,6 @@ const TEAM_FROM_ROLE = {
   sound: "sound",
   lighting: "lights",
   media: "media",
-  worship_volunteer: "worship",
-  sound_lead: "sound",
-  lights_lead: "lights",
-  media_lead: "media",
-  worship_lead: "worship",
 };
 
 const countEventsThisWeek = (events) => {

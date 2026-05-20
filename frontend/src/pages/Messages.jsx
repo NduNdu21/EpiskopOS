@@ -3,14 +3,9 @@ import { getMessages, sendMessage, getMe } from "../api";
 import { getSocket } from "../socket";
 
 const TEAM_FROM_ROLE = {
-  sound_volunteer: "sound",
-  lights_volunteer: "lights",
-  media_volunteer: "media",
-  worship_volunteer: "worship",
-  sound_lead: "sound",
-  lights_lead: "lights",
-  media_lead: "media",
-  worship_lead: "worship",
+  sound: "sound",
+  lighting: "lights",
+  media: "media",
 };
 
 const TEAM_BADGE = {
@@ -22,7 +17,7 @@ const TEAM_BADGE = {
   team_lead: "bg-blue-100 text-blue-800",
 };
 
-const ALL_TEAMS = ["sound", "lights", "media", "worship"];
+const ALL_TEAMS = ["sound", "lighting", "media", "worship"];
 
 const formatTime = (ts) =>
   new Date(ts).toLocaleTimeString("en-GB", {
