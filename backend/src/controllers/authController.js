@@ -2,10 +2,17 @@
 const pool = require("../config/db");
 const bcrypt = require("bcrypt");
 const generateToken = require("../utils/generateToken");
+const { ASSIGNABLE_ROLES } = require("../constants/roles");
 
 //register controller
 exports.register = async(req, res) => {
     const { name, email, password, role } = req.body;
+
+    if (!ASSIGNABLE_ROLES.includes(role)) {
+        return res.status(400).json({
+            message: `Invalid role. Must be one of: ${ASSIGNABLE_ROLES.join(", ")}`
+        });
+    }
 
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -19,6 +26,9 @@ exports.register = async(req, res) => {
 
         res.status(201).json(result.rows[0]);
     } catch (err) {
+        if (err.code === '23505') { // unique_violation on email
+            return res.status(409).json({ message: "An account with that email already exists" });
+        }
         res.status(500).json({ error: err.message });
     }
 }
