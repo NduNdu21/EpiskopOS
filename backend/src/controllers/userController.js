@@ -1,4 +1,5 @@
 const pool = require("../config/db");
+const { ALL_ROLES } = require("../constants/roles");
 
 const getMe = async (req, res) => {
   try {
@@ -40,8 +41,7 @@ const getUsers = async (req, res) => {
 const updateUserRole = async (req, res) => {
   const { id } = req.params;
   const { role } = req.body;
-  const validRoles = ['admin', 'sound', 'lighting', 'media'];
-  if (!validRoles.includes(role)) {
+  if (!ALL_ROLES.includes(role)) {
     return res.status(400).json({ error: 'Invalid role' });
   }
   try {
