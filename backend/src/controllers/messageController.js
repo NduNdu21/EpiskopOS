@@ -1,10 +1,11 @@
-const pool = require('../config/db');
+const pool = require("../config/db");
+const getTeamFromRole = require("../utils/getTeamFromRole");
 
 exports.getMessages = async (req, res) => {
   const { scope, team_target, event_id } = req.query;
   const { role } = req.user;
 
-  const isAdmin = role === 'admin' || role === 'team_lead';
+  const isAdmin = role === "admin" || role === "team_lead";
 
   try {
     let query = `
@@ -23,9 +24,8 @@ exports.getMessages = async (req, res) => {
     `;
 
     const params = [];
-
+    const userTeam = getTeamFromRole(role);
     if (!isAdmin) {
-      const userTeam = getTeamFromRole(role);
       query += ` AND (m.scope = 'broadcast' OR m.team_target = $${params.length + 1})`;
       params.push(userTeam);
     }
@@ -50,8 +50,8 @@ exports.getMessages = async (req, res) => {
     const result = await pool.query(query, params);
     res.json(result.rows);
   } catch (err) {
-    console.error('getMessages error:', err);
-    res.status(500).json({ error: 'Failed to fetch messages' });
+    console.error("getMessages error:", err);
+    res.status(500).json({ error: "Failed to fetch messages" });
   }
 };
 
@@ -60,19 +60,23 @@ exports.createMessage = async (req, res) => {
   const { id: sender_id, role } = req.user;
 
   if (!content || !scope) {
-    return res.status(400).json({ error: 'content and scope are required' });
+    return res.status(400).json({ error: "content and scope are required" });
   }
 
-  if (scope === 'team' && !team_target) {
-    return res.status(400).json({ error: 'team_target required for team scope' });
+  if (scope === "team" && !team_target) {
+    return res
+      .status(400)
+      .json({ error: "team_target required for team scope" });
   }
 
-  const isAdmin = role === 'admin' || role === 'team_lead';
+  const isAdmin = role === "admin" || role === "team_lead";
 
-  if (scope === 'team' && !isAdmin) {
+  if (scope === "team" && !isAdmin) {
     const userTeam = getTeamFromRole(role);
     if (team_target !== userTeam) {
-      return res.status(403).json({ error: 'Volunteers can only message their own team' });
+      return res
+        .status(403)
+        .json({ error: "Volunteers can only message their own team" });
     }
   }
 
@@ -81,14 +85,20 @@ exports.createMessage = async (req, res) => {
       `INSERT INTO messages (sender_id, content, scope, team_target, event_id)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [sender_id, content, scope, scope === 'team' ? team_target : null, event_id || null]
+      [
+        sender_id,
+        content,
+        scope,
+        scope === "team" ? team_target : null,
+        event_id || null,
+      ],
     );
 
     const inserted = result.rows[0];
 
     const senderResult = await pool.query(
       `SELECT name, role FROM users WHERE id = $1`,
-      [sender_id]
+      [sender_id],
     );
 
     const sender = senderResult.rows[0];
@@ -99,29 +109,21 @@ exports.createMessage = async (req, res) => {
       sender_role: sender.role,
     };
 
-    req.io.emit('new_message', payload);
+    req.io.emit("new_message", payload);
 
     res.status(201).json(payload);
   } catch (err) {
-    console.error('createMessage error:', err);
-    res.status(500).json({ error: 'Failed to send message' });
+    console.error("createMessage error:", err);
+    res.status(500).json({ error: "Failed to send message" });
   }
 };
 
 exports.cleanupMessages = async (req, res) => {
   try {
-    await pool.query('SELECT delete_old_messages()');
-    res.json({ message: 'Old messages deleted' });
+    await pool.query("SELECT delete_old_messages()");
+    res.json({ message: "Old messages deleted" });
   } catch (err) {
-    console.error('cleanupMessages error:', err);
-    res.status(500).json({ error: 'Cleanup failed' });
+    console.error("cleanupMessages error:", err);
+    res.status(500).json({ error: "Cleanup failed" });
   }
-};
-const getTeamFromRole = (role) => {
-  const map = {
-    sound: 'sound',
-    lighting: 'lighting',
-    media: 'media',
-  };
-  return map[role] || null;
 };
