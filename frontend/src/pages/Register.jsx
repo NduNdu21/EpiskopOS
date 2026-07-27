@@ -5,7 +5,7 @@ import { registerUser } from "../api";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 
-const ROLES = ["volunteer", "lighting", "sound", "media", "instrumentalists"];
+const ROLES = ["sound", "lighting", "media"];
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
