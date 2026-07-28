@@ -21,20 +21,20 @@ const getUsers = async (req, res) => {
   const { role: callerRole } = req.user;
   try {
     let result;
-    if (callerRole === 'admin') {
+    if (callerRole === "admin") {
       result = await pool.query(
-        'SELECT id, name, role FROM users ORDER BY role, name'
+        "SELECT id, name, role, status FROM users ORDER BY status DESC, role, name"
       );
     } else {
       result = await pool.query(
-        'SELECT id, name, role FROM users WHERE role = $1 ORDER BY name',
-        [callerRole]
+        "SELECT id, name, role FROM users WHERE role = $1 AND status = $2 ORDER BY name",
+        [callerRole, "approved"]
       );
     }
     res.json(result.rows);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to fetch users' });
+    res.status(500).json({ error: "Failed to fetch users" });
   }
 };
 
@@ -57,6 +57,24 @@ const updateUserRole = async (req, res) => {
   }
 };
 
+const approveUser = async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ error: "Forbidden" });
+  }
+  const { id } = req.params;
+  try {
+    const result = await pool.query(
+      "UPDATE users SET status = 'approved' WHERE id = $1 RETURNING id, name, role, status",
+      [id]
+    );
+    if (result.rowCount === 0) return res.status(404).json({ error: "User not found" });
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to approve user" });
+  }
+};
+
 const deleteUser = async (req, res) => {
   const { id } = req.params;
   if (id === req.user.id) {
@@ -72,4 +90,4 @@ const deleteUser = async (req, res) => {
   }
 };
 
-module.exports = { getMe, getUsers, updateUserRole, deleteUser };
+module.exports = { getMe, getUsers, updateUserRole, approveUser, deleteUser };
