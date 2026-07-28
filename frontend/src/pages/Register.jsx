@@ -61,6 +61,7 @@ const Register = () => {
   const [serverError, setServerError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [registered, setRegistered] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -85,6 +86,8 @@ const Register = () => {
 
     try {
       setLoading(true);
+      await registerUser(payload);
+      setRegistered(true);
       // Strip confirmPassword before sending to API
       const { confirmPassword: _confirmPassword, ...payload } = form;
       const data = await registerUser(payload);
@@ -104,8 +107,30 @@ const Register = () => {
       : "border-beige/60 focus:border-beige"
     }`;
 
+  // Early return for successful registration
+  if (registered) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-b from-dark-teal to-ash-grey">
+        <div className="w-full max-w-sm px-8 text-center">
+          <h1 className="text-5xl font-bold text-beige tracking-tight mb-10">EpiskopOS</h1>
+          <div className="bg-white/10 border border-beige/20 rounded-2xl px-6 py-8">
+            <h2 className="text-xl font-semibold text-beige mb-3">Registration submitted</h2>
+            <p className="text-beige/70 text-sm leading-relaxed mb-6">
+              Your account is awaiting admin approval. You will be able to log in
+              once an admin has reviewed your registration.
+            </p>
+            <Link to="/login" className="text-beige/90 underline text-sm hover:opacity-100">
+              Back to login
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-b from-dark-teal to-ash-grey">
+
       <div className="w-full max-w-sm px-8 flex flex-col items-center">
 
         <div className="mb-16 text-center">
@@ -247,5 +272,6 @@ const Register = () => {
     </div>
   );
 };
+
 
 export default Register;
