@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getCurrentAndNext, getMe, getMessages, getEvents, getSegments } from "../api";
+import WelcomeTour from "../components/WelcomeTour";
 
 const formatServiceDate = (event) => {
   if (!event) return null;
@@ -132,6 +133,10 @@ const HomePage = () => {
   const [eventsThisWeek, setEventsThisWeek] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
 
+  const [showTour, setShowTour] = useState(
+    !localStorage.getItem("episkopos_tour_seen")
+  );
+
   useEffect(() => {
     Promise.all([getMe(), getCurrentAndNext()])
       .then(([userData, eventData]) => {
@@ -189,6 +194,9 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen px-6 pt-6 md:px-10 md:pt-8">
+      {showTour &&
+        (<WelcomeTour onDismiss={() => setShowTour(false)} />
+        )}
 
       {/* Greeting + role badge */}
       <div className="mb-6 md:mb-10 space-y-2">
