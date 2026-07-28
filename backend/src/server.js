@@ -7,6 +7,7 @@ const { Server } = require("socket.io");
 
 const app = express();
 const server = http.createServer(app);
+const { apiLimiter, authLimiter } = require("./middleware/rateLimiter");
 
 // Build allowed origins
 const allowedOrigins = [
@@ -62,6 +63,12 @@ app.use("/api/messages", messageRoutes);
 //attendance routes
 const attendanceRoutes = require('./routes/attendanceRoutes');
 app.use('/api/attendance', attendanceRoutes);
+
+// Apply stricter limiter specifically to auth routes
+app.use("/api/auth", authLimiter);
+
+// Apply general rate limiter to all other API routes
+app.use("/api", apiLimiter);
 
 // Socket.io for events:
 io.on("connection", (socket) => {
