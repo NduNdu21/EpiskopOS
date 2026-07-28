@@ -96,6 +96,16 @@ export default function Members() {
         }
     }
 
+    async function handleApprove(userId) {
+        const res = await apiFetch(`/users/${userId}/approve`, { method: "PATCH" });
+        if (res.ok) {
+            const updated = await res.json();
+            setUsers((prev) =>
+                prev.map((u) => (u.id === updated.id ? { ...u, status: "approved" } : u))
+            );
+        }
+    }
+
     async function handleAttendance(userId, present) {
         if (!liveEventId) return;
         const res = await apiFetch('/attendance', {
@@ -108,12 +118,14 @@ export default function Members() {
     }
 
     // group users by role for admin view
-    const grouped = users.reduce((acc, u) => {
-        const r = u.role; 
-        if (!acc[r]) acc[r] = [];
-        acc[r].push(u);
-        return acc;
-    }, {});
+    const grouped = users
+        .filter((u) => u.status !== "pending")
+        .reduce((acc, u) => {
+            const r = u.role;
+            if (!acc[r]) acc[r] = [];
+            acc[r].push(u);
+            return acc;
+        }, {});
 
     const roleOrder = ['admin', 'sound', 'lighting', 'media'];
 
@@ -162,6 +174,57 @@ export default function Members() {
                         ))}
                     </div>
                 )}
+
+
+                {(() => {
+                    const pending = users.filter((u) => u.status === "pending");
+                    if (!pending.length) return null;
+                    return (
+                        <div className="mb-8">
+                            <h2 className="text-xs font-semibold uppercase tracking-widest text-amber-600 mb-3">
+                                Awaiting Approval
+                            </h2>
+                            <div className="flex flex-col gap-3">
+                                {pending.map((user) => {
+                                    const initials = user.name
+                                        .split(" ")
+                                        .map((w) => w[0])
+                                        .join("")
+                                        .slice(0, 2)
+                                        .toUpperCase();
+                                    return (
+                                        <div
+                                            key={user.id}
+                                            className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3"
+                                        >
+                                            <div className="w-10 h-10 rounded-full bg-amber-200 flex items-center justify-center text-amber-800 text-sm font-bold shrink-0">
+                                                {initials}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-semibold text-ink-black truncate">{user.name}</p>
+                                                <p className="text-xs text-amber-700 mt-0.5 capitalize">{user.role}</p>
+                                            </div>
+                                            <button
+                                                onClick={() => handleApprove(user.id)}
+                                                className="shrink-0 text-xs px-3 py-1.5 rounded-full bg-dark-teal text-white font-medium"
+                                            >
+                                                Approve
+                                            </button>
+                                            <button
+                                                onClick={() => setConfirmDelete(user.id)}
+                                                className="shrink-0 text-red-400 hover:text-red-600 text-lg leading-none ml-1"
+                                                aria-label="Reject user"
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    );
+                })()}
+
 
                 {/* Groups */}
                 {isAdmin ? (
