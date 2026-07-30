@@ -8,6 +8,7 @@ import Sidebar from "./Sidebar";
 import { getLiveEvent } from "../api";
 import { getSocket } from "../socket";
 
+
 export default function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isLive, setIsLive] = useState(false);
