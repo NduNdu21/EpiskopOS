@@ -64,6 +64,9 @@ app.use("/api/messages", messageRoutes);
 const attendanceRoutes = require('./routes/attendanceRoutes');
 app.use('/api/attendance', attendanceRoutes);
 
+// Health check endpoint
+app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
+
 // Apply stricter limiter specifically to auth routes
 app.use("/api/auth", authLimiter);
 
@@ -110,3 +113,4 @@ server.listen(port, "0.0.0.0", async () => {
   }
   console.log(`Server running on http://0.0.0.0:${port}`);
 });
+
