@@ -61,22 +61,29 @@ const Sidebar = ({ isOpen, onClose }) => {
 
                     {/* Menu Items */}
                     <div className="flex flex-col gap-8">
+                        // Profile Button
                         <button
-                            onClick={() => { onClose(); }}
+                            onClick={() => {
+                                navigate("/profile");
+                                onClose();
+                            }}
                             className="flex items-center gap-4 text-ink-black text-lg hover:opacity-70 transition-opacity"
                         >
                             <User size={26} strokeWidth={1.5} />
                             <span className="font-medium">Profile</span>
                         </button>
 
+                        // Settings Button
                         <button
-                            onClick={() => { onClose(); }}
+                            onClick={() => {
+                                navigate("/settings");
+                                onClose();
+                            }}
                             className="flex items-center gap-4 text-ink-black text-lg hover:opacity-70 transition-opacity"
                         >
                             <Settings size={26} strokeWidth={1.5} />
                             <span className="font-medium">Settings</span>
                         </button>
-
                         <button
                             onClick={handleLogout}
                             className="flex items-center gap-4 text-ink-black text-lg hover:opacity-70 transition-opacity"

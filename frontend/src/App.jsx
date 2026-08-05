@@ -35,6 +35,12 @@ function App() {
         <Route path="/live" element={
           <ProtectedRoute><Layout><Live /></Layout></ProtectedRoute>
         } />
+        <Route path="/profile" element={
+          <ProtectedRoute><Layout><Profile /></Layout></ProtectedRoute>
+        } />
+        <Route path="/settings" element={
+          <ProtectedRoute><Layout><Settings /></Layout></ProtectedRoute>
+        } />
       </Routes>
     </BrowserRouter>
   );
