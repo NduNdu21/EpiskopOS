@@ -61,7 +61,6 @@ const Sidebar = ({ isOpen, onClose }) => {
 
                     {/* Menu Items */}
                     <div className="flex flex-col gap-8">
-                        // Profile Button
                         <button
                             onClick={() => {
                                 navigate("/profile");
@@ -72,8 +71,6 @@ const Sidebar = ({ isOpen, onClose }) => {
                             <User size={26} strokeWidth={1.5} />
                             <span className="font-medium">Profile</span>
                         </button>
-
-                        // Settings Button
                         <button
                             onClick={() => {
                                 navigate("/settings");
