@@ -10,6 +10,8 @@ import Messages from "./pages/Messages";
 import Members from './pages/Members';
 import Live from "./pages/Live";
 import Layout from "./components/Layout";
+import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
 
 function App() {
   return (
