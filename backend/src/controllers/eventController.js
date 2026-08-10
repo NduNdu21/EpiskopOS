@@ -120,25 +120,6 @@ exports.getCurrentAndNext = async (req, res) => {
   }
 };
 
-//Events display for volunteers
-exports.getMyEvents = async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT DISTINCT e.* FROM events e
-       JOIN event_segments es ON e.id = es.event_id
-       JOIN segment_teams st ON es.id = st.segment_id
-       WHERE e.all_teams = TRUE
-       OR st.team = $1
-       ORDER BY e.event_date ASC`,
-      [req.user.role]
-    );
-    res.json(result.rows);
-  } catch (err) {
-    console.error("getMyEvents error:", err.message);
-    res.status(500).json({ error: err.message });
-  }
-};
-
 // Get segments for an event
 exports.getSegments = async (req, res) => {
   try {
