@@ -65,6 +65,26 @@ export const getMe = async () => {
   return handleResponse(res);
 };
 
+export const updateProfile = async (data) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_BASE}/users/me`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  });
+  return handleResponse(res);
+};
+ 
+export const updatePassword = async (data) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_BASE}/users/me/password`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  });
+  return handleResponse(res);
+};
+
 //Events
 export const getEvents = async () => {
   const token = localStorage.getItem("token");
@@ -73,16 +93,6 @@ export const getEvents = async () => {
   });
   return handleResponse(res);
 };
-
-
-export const getMyEvents = async () => {
-  const token = localStorage.getItem("token");
-  const res = await fetch(`${API_BASE}/events/my`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return handleResponse(res);
-};
-
 
 export const createEvent = async (data) => {
   const token = localStorage.getItem("token");
