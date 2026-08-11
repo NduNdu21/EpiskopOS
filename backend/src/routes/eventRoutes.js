@@ -6,7 +6,6 @@ const {
   createEvent,
   updateEvent,
   deleteEvent,
-  getMyEvents,
   getCurrentAndNext,
   getSegments,
   createSegment,
