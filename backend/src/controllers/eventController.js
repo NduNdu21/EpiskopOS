@@ -1,4 +1,5 @@
 const pool = require("../config/db");
+const { getEventSubscriptions, getSegmentSubscriptions, sendToSubscriptions } = require("../services/notificationService");
 
 // Get all events
 exports.getEvents = async (req, res) => {
