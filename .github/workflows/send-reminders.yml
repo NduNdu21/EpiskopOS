@@ -1,0 +1,15 @@
+name: Send Event Reminders
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+jobs:
+  send-reminders:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger reminder endpoint
+        run: |
+          curl -X POST "${{ secrets.BACKEND_URL }}/internal/send-reminders" \
+            -H "x-cron-secret: ${{ secrets.REMINDER_CRON_SECRET }}" \
+            --fail
