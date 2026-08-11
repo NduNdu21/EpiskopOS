@@ -29,7 +29,6 @@ router.get("/current", getCurrentAndNext);
 
 //Main event routes
 router.get("/", getEvents);                           // all users
-router.get("/", getMyEvents);                         // volunteers
 router.post("/", createEvent);                        // admin
 router.put("/:id", updateEvent);                      // admin
 router.delete("/:id", deleteEvent);                   // admin
