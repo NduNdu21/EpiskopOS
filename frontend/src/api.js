@@ -275,3 +275,30 @@ export const sendMessage = async (data) => {
   });
   return handleResponse(res);
 };
+
+// Push notifications
+export const subscribePush = async (subscription) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_BASE}/push/subscribe`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(subscription),
+  });
+  return handleResponse(res);
+};
+
+export const unsubscribePush = async (endpoint) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_BASE}/push/unsubscribe`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ endpoint }),
+  });
+  return handleResponse(res);
+};
