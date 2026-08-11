@@ -73,6 +73,15 @@ app.use("/api/auth", authLimiter);
 // Apply general rate limiter to all other API routes
 app.use("/api", apiLimiter);
 
+// after existing route requires
+const pushRoutes = require("./routes/pushRoutes");
+app.use("/api/push", pushRoutes);
+
+const internalRoutes = require("./routes/internalRoutes");
+app.use("/internal", internalRoutes);
+
+require("./config/webpush"); // inits VAPID details on startup
+
 // Socket.io for events:
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);

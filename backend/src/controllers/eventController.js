@@ -7,7 +7,7 @@ exports.getEvents = async (req, res) => {
       `SELECT e.*, u.name AS created_by_name 
        FROM events e
        LEFT JOIN users u ON e.created_by = u.id
-       ORDER BY e.event_date ASC`
+       ORDER BY e.event_date ASC`,
     );
     res.json(result.rows);
   } catch (err) {
@@ -21,7 +21,8 @@ exports.createEvent = async (req, res) => {
   if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Forbidden" });
   }
-  const { title, description, event_date, location, duration_hours, priority } = req.body;
+  const { title, description, event_date, location, duration_hours, priority } =
+    req.body;
   if (!title || !event_date) {
     return res.status(400).json({ message: "Title and date are required" });
   }
@@ -29,17 +30,27 @@ exports.createEvent = async (req, res) => {
     // Check for duplicate event at same date and time
     const duplicate = await pool.query(
       `SELECT id FROM events WHERE event_date = $1`,
-      [event_date]
+      [event_date],
     );
     if (duplicate.rows.length > 0) {
-      return res.status(409).json({ message: "An event already exists at this date and time." });
+      return res
+        .status(409)
+        .json({ message: "An event already exists at this date and time." });
     }
 
     const result = await pool.query(
       `INSERT INTO events (title, description, event_date, location, duration_hours, priority, created_by)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING *`,
-      [title, description, event_date, location, duration_hours, priority, req.user.id]
+      [
+        title,
+        description,
+        event_date,
+        location,
+        duration_hours,
+        priority,
+        req.user.id,
+      ],
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -53,14 +64,23 @@ exports.updateEvent = async (req, res) => {
   if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Forbidden" });
   }
-  const { title, description, event_date, location, duration_hours, priority } = req.body;
+  const { title, description, event_date, location, duration_hours, priority } =
+    req.body;
   try {
     const result = await pool.query(
       `UPDATE events 
        SET title=$1, description=$2, event_date=$3, location=$4, duration_hours=$5, priority=$6
        WHERE id=$7 
        RETURNING *`,
-      [title, description, event_date, location, duration_hours, priority, req.params.id]
+      [
+        title,
+        description,
+        event_date,
+        location,
+        duration_hours,
+        priority,
+        req.params.id,
+      ],
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ message: "Event not found" });
@@ -98,7 +118,7 @@ exports.getCurrentAndNext = async (req, res) => {
        AND event_date >= NOW() - INTERVAL '15 minutes'
        ORDER BY event_date ASC 
        LIMIT 1`,
-      [now]
+      [now],
     );
 
     // Next event: upcoming
@@ -107,7 +127,7 @@ exports.getCurrentAndNext = async (req, res) => {
        WHERE event_date > $1
        ORDER BY event_date ASC 
        LIMIT 1`,
-      [now]
+      [now],
     );
 
     res.json({
@@ -134,7 +154,7 @@ exports.getSegments = async (req, res) => {
        WHERE es.event_id = $1
        GROUP BY es.id
        ORDER BY es.order_index ASC`,
-      [req.params.id]
+      [req.params.id],
     );
     res.json(result.rows);
   } catch (err) {
@@ -158,7 +178,7 @@ exports.createSegment = async (req, res) => {
       `INSERT INTO event_segments (event_id, title, duration_minutes, notes, order_index)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [req.params.id, title, duration_minutes, notes, order_index || 0]
+      [req.params.id, title, duration_minutes, notes, order_index || 0],
     );
 
     const segment = result.rows[0];
@@ -169,7 +189,7 @@ exports.createSegment = async (req, res) => {
         await pool.query(
           `INSERT INTO segment_teams (segment_id, team) VALUES ($1, $2)
            ON CONFLICT DO NOTHING`,
-          [segment.id, team]
+          [segment.id, team],
         );
       }
     }
@@ -185,7 +205,7 @@ exports.createSegment = async (req, res) => {
        LEFT JOIN segment_teams st ON es.id = st.segment_id
        WHERE es.id = $1
        GROUP BY es.id`,
-      [segment.id]
+      [segment.id],
     );
 
     res.status(201).json(full.rows[0]);
@@ -207,7 +227,14 @@ exports.updateSegment = async (req, res) => {
        SET title=$1, duration_minutes=$2, notes=$3, order_index=$4
        WHERE id=$5 AND event_id=$6
        RETURNING *`,
-      [title, duration_minutes, notes, order_index, req.params.segmentId, req.params.id]
+      [
+        title,
+        duration_minutes,
+        notes,
+        order_index,
+        req.params.segmentId,
+        req.params.id,
+      ],
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ message: "Segment not found" });
@@ -225,10 +252,9 @@ exports.deleteSegment = async (req, res) => {
     return res.status(403).json({ message: "Forbidden" });
   }
   try {
-    await pool.query(
-      "DELETE FROM event_segments WHERE id = $1",
-      [req.params.segmentId]
-    );
+    await pool.query("DELETE FROM event_segments WHERE id = $1", [
+      req.params.segmentId,
+    ]);
     res.json({ message: "Segment deleted" });
   } catch (err) {
     console.error("deleteSegment error:", err.message);
@@ -249,7 +275,7 @@ exports.addSegmentTeam = async (req, res) => {
     await pool.query(
       `INSERT INTO segment_teams (segment_id, team) VALUES ($1, $2)
        ON CONFLICT DO NOTHING`,
-      [req.params.segmentId, team]
+      [req.params.segmentId, team],
     );
     res.json({ message: "Team added" });
   } catch (err) {
@@ -267,7 +293,7 @@ exports.removeSegmentTeam = async (req, res) => {
     await pool.query(
       `DELETE FROM segment_teams 
        WHERE segment_id = $1 AND team = $2`,
-      [req.params.segmentId, req.params.team]
+      [req.params.segmentId, req.params.team],
     );
     res.json({ message: "Team removed" });
   } catch (err) {
@@ -287,7 +313,7 @@ exports.goLive = async (req, res) => {
        SET is_live = TRUE, started_at = NOW(), current_segment_index = 0, segment_started_at = NOW()
        WHERE id = $1
        RETURNING *`,
-      [req.params.id]
+      [req.params.id],
     );
 
     const event = result.rows[0];
@@ -295,6 +321,13 @@ exports.goLive = async (req, res) => {
     const io = req.app.get("io");
     io.to(req.params.id).emit("service_update", { type: "GO_LIVE", event });
     io.to("general").emit("service_update", { type: "GO_LIVE", event });
+
+    const subs = await getEventSubscriptions(event.id, { includeAdmins: true });
+    await sendToSubscriptions(subs, {
+      title: event.title,
+      body: "This event just went live",
+      url: `/events/${event.id}/live`,
+    });
 
     res.json(event);
   } catch (err) {
@@ -314,7 +347,7 @@ exports.nextSegment = async (req, res) => {
        SET current_segment_index = current_segment_index + 1
        WHERE id = $1
        RETURNING *`,
-      [req.params.id]
+      [req.params.id],
     );
 
     const event = result.rows[0];
@@ -324,6 +357,20 @@ exports.nextSegment = async (req, res) => {
       type: "NEXT_SEGMENT",
       event,
     });
+
+    const segResult = await pool.query(
+      `SELECT id, title FROM event_segments WHERE event_id = $1 ORDER BY order_index ASC OFFSET $2 LIMIT 1`,
+      [req.params.id, event.current_segment_index],
+    );
+    const segment = segResult.rows[0];
+    if (segment) {
+      const subs = await getSegmentSubscriptions(segment.id, event.id);
+      await sendToSubscriptions(subs, {
+        title: event.title,
+        body: `Now on: ${segment.title}`,
+        url: `/events/${event.id}/live`,
+      });
+    }
 
     res.json(event);
   } catch (err) {
@@ -343,7 +390,7 @@ exports.prevSegment = async (req, res) => {
        SET current_segment_index = GREATEST(current_segment_index - 1, 0)
        WHERE id = $1
        RETURNING *`,
-      [req.params.id]
+      [req.params.id],
     );
 
     const event = result.rows[0];
@@ -353,6 +400,20 @@ exports.prevSegment = async (req, res) => {
       type: "PREV_SEGMENT",
       event,
     });
+
+    const segResult = await pool.query(
+      `SELECT id, title FROM event_segments WHERE event_id = $1 ORDER BY order_index ASC OFFSET $2 LIMIT 1`,
+      [req.params.id, event.current_segment_index],
+    );
+    const segment = segResult.rows[0];
+    if (segment) {
+      const subs = await getSegmentSubscriptions(segment.id, event.id);
+      await sendToSubscriptions(subs, {
+        title: event.title,
+        body: `Now on: ${segment.title}`,
+        url: `/events/${event.id}/live`,
+      });
+    }
 
     res.json(event);
   } catch (err) {
@@ -372,7 +433,7 @@ exports.endService = async (req, res) => {
        SET is_live = FALSE, started_at = NULL, current_segment_index = 0
        WHERE id = $1
        RETURNING *`,
-      [req.params.id]
+      [req.params.id],
     );
 
     const event = result.rows[0];
@@ -395,7 +456,7 @@ exports.getLiveEvent = async (req, res) => {
       `SELECT * FROM events 
        WHERE is_live = TRUE 
        ORDER BY started_at DESC
-       LIMIT 1`
+       LIMIT 1`,
     );
     res.json(result.rows[0] || null);
   } catch (err) {
