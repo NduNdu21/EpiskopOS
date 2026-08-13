@@ -8,7 +8,9 @@ exports.getEvents = async (req, res) => {
       `SELECT e.*, u.name AS created_by_name 
        FROM events e
        LEFT JOIN users u ON e.created_by = u.id
+       WHERE e.organization_id = $1
        ORDER BY e.event_date ASC`,
+      [req.organization_id],
     );
     res.json(result.rows);
   } catch (err) {
@@ -28,10 +30,10 @@ exports.createEvent = async (req, res) => {
     return res.status(400).json({ message: "Title and date are required" });
   }
   try {
-    // Check for duplicate event at same date and time
+    // Check for duplicate event at same date and time, scoped to this org
     const duplicate = await pool.query(
-      `SELECT id FROM events WHERE event_date = $1`,
-      [event_date],
+      `SELECT id FROM events WHERE event_date = $1 AND organization_id = $2`,
+      [event_date, req.organization_id],
     );
     if (duplicate.rows.length > 0) {
       return res
@@ -40,8 +42,8 @@ exports.createEvent = async (req, res) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO events (title, description, event_date, location, duration_hours, priority, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO events (title, description, event_date, location, duration_hours, priority, created_by, organization_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
       [
         title,
@@ -51,6 +53,7 @@ exports.createEvent = async (req, res) => {
         duration_hours,
         priority,
         req.user.id,
+        req.organization_id,
       ],
     );
     res.status(201).json(result.rows[0]);
@@ -71,7 +74,7 @@ exports.updateEvent = async (req, res) => {
     const result = await pool.query(
       `UPDATE events 
        SET title=$1, description=$2, event_date=$3, location=$4, duration_hours=$5, priority=$6
-       WHERE id=$7 
+       WHERE id=$7 AND organization_id=$8
        RETURNING *`,
       [
         title,
@@ -81,6 +84,7 @@ exports.updateEvent = async (req, res) => {
         duration_hours,
         priority,
         req.params.id,
+        req.organization_id,
       ],
     );
     if (result.rows.length === 0) {
@@ -99,7 +103,13 @@ exports.deleteEvent = async (req, res) => {
     return res.status(403).json({ message: "Forbidden" });
   }
   try {
-    await pool.query("DELETE FROM events WHERE id=$1", [req.params.id]);
+    const result = await pool.query(
+      "DELETE FROM events WHERE id=$1 AND organization_id=$2 RETURNING id",
+      [req.params.id, req.organization_id],
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Event not found" });
+    }
     res.json({ message: "Event deleted" });
   } catch (err) {
     console.error("deleteEvent error:", err.message);
@@ -107,28 +117,27 @@ exports.deleteEvent = async (req, res) => {
   }
 };
 
-//Get current and next event for homepage
+// Get current and next event for homepage
 exports.getCurrentAndNext = async (req, res) => {
   try {
     const now = new Date().toISOString();
 
-    // Current event: started but not yet ended (within 2 hours)
     const current = await pool.query(
       `SELECT * FROM events 
        WHERE event_date <= $1 
        AND event_date >= NOW() - INTERVAL '15 minutes'
+       AND organization_id = $2
        ORDER BY event_date ASC 
        LIMIT 1`,
-      [now],
+      [now, req.organization_id],
     );
 
-    // Next event: upcoming
     const next = await pool.query(
       `SELECT * FROM events 
-       WHERE event_date > $1
+       WHERE event_date > $1 AND organization_id = $2
        ORDER BY event_date ASC 
        LIMIT 1`,
-      [now],
+      [now, req.organization_id],
     );
 
     res.json({
@@ -151,11 +160,12 @@ exports.getSegments = async (req, res) => {
           '{}'
         ) AS teams
        FROM event_segments es
+       JOIN events e ON es.event_id = e.id
        LEFT JOIN segment_teams st ON es.id = st.segment_id
-       WHERE es.event_id = $1
+       WHERE es.event_id = $1 AND e.organization_id = $2
        GROUP BY es.id
        ORDER BY es.order_index ASC`,
-      [req.params.id],
+      [req.params.id, req.organization_id],
     );
     res.json(result.rows);
   } catch (err) {
@@ -174,7 +184,15 @@ exports.createSegment = async (req, res) => {
     return res.status(400).json({ message: "Title and duration are required" });
   }
   try {
-    // Insert segment
+    // Verify the parent event belongs to this org before inserting
+    const eventCheck = await pool.query(
+      `SELECT id FROM events WHERE id = $1 AND organization_id = $2`,
+      [req.params.id, req.organization_id],
+    );
+    if (eventCheck.rows.length === 0) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
     const result = await pool.query(
       `INSERT INTO event_segments (event_id, title, duration_minutes, notes, order_index)
        VALUES ($1, $2, $3, $4, $5)
@@ -184,7 +202,6 @@ exports.createSegment = async (req, res) => {
 
     const segment = result.rows[0];
 
-    // Insert teams if provided
     if (teams && teams.length > 0) {
       for (const team of teams) {
         await pool.query(
@@ -195,7 +212,6 @@ exports.createSegment = async (req, res) => {
       }
     }
 
-    // Return segment with teams
     const full = await pool.query(
       `SELECT es.*,
         COALESCE(
@@ -224,10 +240,12 @@ exports.updateSegment = async (req, res) => {
   const { title, duration_minutes, notes, order_index } = req.body;
   try {
     const result = await pool.query(
-      `UPDATE event_segments 
+      `UPDATE event_segments es
        SET title=$1, duration_minutes=$2, notes=$3, order_index=$4
-       WHERE id=$5 AND event_id=$6
-       RETURNING *`,
+       FROM events e
+       WHERE es.id=$5 AND es.event_id=$6
+       AND es.event_id = e.id AND e.organization_id = $7
+       RETURNING es.*`,
       [
         title,
         duration_minutes,
@@ -235,6 +253,7 @@ exports.updateSegment = async (req, res) => {
         order_index,
         req.params.segmentId,
         req.params.id,
+        req.organization_id,
       ],
     );
     if (result.rows.length === 0) {
@@ -253,9 +272,17 @@ exports.deleteSegment = async (req, res) => {
     return res.status(403).json({ message: "Forbidden" });
   }
   try {
-    await pool.query("DELETE FROM event_segments WHERE id = $1", [
-      req.params.segmentId,
-    ]);
+    const result = await pool.query(
+      `DELETE FROM event_segments es
+       USING events e
+       WHERE es.id = $1
+       AND es.event_id = e.id AND e.organization_id = $2
+       RETURNING es.id`,
+      [req.params.segmentId, req.organization_id],
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Segment not found" });
+    }
     res.json({ message: "Segment deleted" });
   } catch (err) {
     console.error("deleteSegment error:", err.message);
@@ -273,6 +300,17 @@ exports.addSegmentTeam = async (req, res) => {
     return res.status(400).json({ message: "Team is required" });
   }
   try {
+    // Verify segment belongs to an event in this org
+    const check = await pool.query(
+      `SELECT es.id FROM event_segments es
+       JOIN events e ON es.event_id = e.id
+       WHERE es.id = $1 AND e.organization_id = $2`,
+      [req.params.segmentId, req.organization_id],
+    );
+    if (check.rows.length === 0) {
+      return res.status(404).json({ message: "Segment not found" });
+    }
+
     await pool.query(
       `INSERT INTO segment_teams (segment_id, team) VALUES ($1, $2)
        ON CONFLICT DO NOTHING`,
@@ -291,11 +329,18 @@ exports.removeSegmentTeam = async (req, res) => {
     return res.status(403).json({ message: "Forbidden" });
   }
   try {
-    await pool.query(
-      `DELETE FROM segment_teams 
-       WHERE segment_id = $1 AND team = $2`,
-      [req.params.segmentId, req.params.team],
+    const result = await pool.query(
+      `DELETE FROM segment_teams st
+       USING event_segments es, events e
+       WHERE st.segment_id = $1 AND st.team = $2
+       AND st.segment_id = es.id AND es.event_id = e.id
+       AND e.organization_id = $3
+       RETURNING st.id`,
+      [req.params.segmentId, req.params.team, req.organization_id],
     );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Team assignment not found" });
+    }
     res.json({ message: "Team removed" });
   } catch (err) {
     console.error("removeSegmentTeam error:", err.message);
@@ -312,10 +357,13 @@ exports.goLive = async (req, res) => {
     const result = await pool.query(
       `UPDATE events 
        SET is_live = TRUE, started_at = NOW(), current_segment_index = 0, segment_started_at = NOW()
-       WHERE id = $1
+       WHERE id = $1 AND organization_id = $2
        RETURNING *`,
-      [req.params.id],
+      [req.params.id, req.organization_id],
     );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Event not found" });
+    }
 
     const event = result.rows[0];
 
@@ -346,10 +394,13 @@ exports.nextSegment = async (req, res) => {
     const result = await pool.query(
       `UPDATE events 
        SET current_segment_index = current_segment_index + 1
-       WHERE id = $1
+       WHERE id = $1 AND organization_id = $2
        RETURNING *`,
-      [req.params.id],
+      [req.params.id, req.organization_id],
     );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Event not found" });
+    }
 
     const event = result.rows[0];
 
@@ -389,10 +440,13 @@ exports.prevSegment = async (req, res) => {
     const result = await pool.query(
       `UPDATE events
        SET current_segment_index = GREATEST(current_segment_index - 1, 0)
-       WHERE id = $1
+       WHERE id = $1 AND organization_id = $2
        RETURNING *`,
-      [req.params.id],
+      [req.params.id, req.organization_id],
     );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Event not found" });
+    }
 
     const event = result.rows[0];
 
@@ -432,10 +486,13 @@ exports.endService = async (req, res) => {
     const result = await pool.query(
       `UPDATE events 
        SET is_live = FALSE, started_at = NULL, current_segment_index = 0
-       WHERE id = $1
+       WHERE id = $1 AND organization_id = $2
        RETURNING *`,
-      [req.params.id],
+      [req.params.id, req.organization_id],
     );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Event not found" });
+    }
 
     const event = result.rows[0];
 
@@ -455,9 +512,10 @@ exports.getLiveEvent = async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT * FROM events 
-       WHERE is_live = TRUE 
+       WHERE is_live = TRUE AND organization_id = $1
        ORDER BY started_at DESC
        LIMIT 1`,
+      [req.organization_id],
     );
     res.json(result.rows[0] || null);
   } catch (err) {
