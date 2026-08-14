@@ -21,9 +21,10 @@ exports.getMessages = async (req, res) => {
       FROM messages m
       JOIN users u ON m.sender_id = u.id
       WHERE m.created_at > now() - INTERVAL '7 days'
+      AND m.organization_id = $1
     `;
 
-    const params = [];
+    const params = [req.organization_id];
     const userTeam = getTeamFromRole(role);
     if (!isAdmin) {
       query += ` AND (m.scope = 'broadcast' OR m.team_target = $${params.length + 1})`;
@@ -81,9 +82,20 @@ exports.createMessage = async (req, res) => {
   }
 
   try {
+    // If event_id provided, confirm it belongs to the sender's org
+    if (event_id) {
+      const eventCheck = await pool.query(
+        `SELECT id FROM events WHERE id = $1 AND organization_id = $2`,
+        [event_id, req.organization_id],
+      );
+      if (eventCheck.rows.length === 0) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+    }
+
     const result = await pool.query(
-      `INSERT INTO messages (sender_id, content, scope, team_target, event_id)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO messages (sender_id, content, scope, team_target, event_id, organization_id)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
       [
         sender_id,
@@ -91,6 +103,7 @@ exports.createMessage = async (req, res) => {
         scope,
         scope === "team" ? team_target : null,
         event_id || null,
+        req.organization_id,
       ],
     );
 
