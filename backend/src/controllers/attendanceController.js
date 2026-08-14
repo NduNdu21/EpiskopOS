@@ -6,11 +6,19 @@ const getAttendance = async (req, res) => {
   if (!event_id) return res.status(400).json({ error: 'event_id required' });
 
   try {
+    // Confirm event belongs to requester's org before returning any data
+    const eventCheck = await db.query(
+      'SELECT id FROM events WHERE id = $1 AND organization_id = $2',
+      [event_id, req.organization_id]
+    );
+    if (eventCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
     const result = await db.query(
       'SELECT user_id, present FROM attendance WHERE event_id = $1',
       [event_id]
     );
-    // return as a map { user_id: present }
     const map = {};
     result.rows.forEach(r => { map[r.user_id] = r.present; });
     res.json(map);
@@ -22,12 +30,25 @@ const getAttendance = async (req, res) => {
 
 // POST /api/attendance  (admin only)
 const setAttendance = async (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
   const { event_id, user_id, present } = req.body;
   if (!event_id || !user_id || present === undefined) {
     return res.status(400).json({ error: 'event_id, user_id, present required' });
   }
 
   try {
+    // Confirm event belongs to requester's org before writing
+    const eventCheck = await db.query(
+      'SELECT id FROM events WHERE id = $1 AND organization_id = $2',
+      [event_id, req.organization_id]
+    );
+    if (eventCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
     await db.query(
       `INSERT INTO attendance (event_id, user_id, present)
        VALUES ($1, $2, $3)
