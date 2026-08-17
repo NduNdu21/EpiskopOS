@@ -6,7 +6,7 @@ import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSe
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-const TEAMS = ["admin", "volunteer", "lighting", "sound", "media", "instrumentalists"];
+const TEAMS = ["admin", "lighting", "sound", "media"];
 
 const TeamSelector = ({ selected, onChange }) => (
     <div className="flex flex-col gap-2">
