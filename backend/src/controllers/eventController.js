@@ -371,7 +371,7 @@ exports.goLive = async (req, res) => {
     io.to(req.params.id).emit("service_update", { type: "GO_LIVE", event });
     io.to("general").emit("service_update", { type: "GO_LIVE", event });
 
-    const subs = await getEventSubscriptions(event.id, { includeAdmins: true });
+    const subs = await getEventSubscriptions(event.id, req.organization_id, { includeAdmins: true });
     await sendToSubscriptions(subs, {
       title: event.title,
       body: "This event just went live",
