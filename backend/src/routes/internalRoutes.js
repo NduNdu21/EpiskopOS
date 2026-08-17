@@ -27,7 +27,7 @@ router.post("/send-reminders", async (req, res) => {
       );
 
       for (const event of events.rows) {
-        const subs = await getEventSubscriptions(event.id, { includeAdmins: false });
+        const subs = await getEventSubscriptions(event.id, event.organization_id, { includeAdmins: false });
         await sendToSubscriptions(subs, {
           title: event.title,
           body: `Reminder: ${event.title} is in ${w.label}`,
