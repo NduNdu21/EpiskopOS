@@ -158,6 +158,7 @@ CREATE TABLE public.organizations (
     id uuid DEFAULT gen_random_uuid() NOT NULL,
     name character varying NOT NULL,
     slug character varying NOT NULL,
+    invite_code character varying NOT NULL,
     created_at timestamp with time zone DEFAULT now()
 );
 
@@ -257,6 +258,10 @@ ALTER TABLE ONLY public.organizations
 
 ALTER TABLE ONLY public.organizations
     ADD CONSTRAINT organizations_slug_key UNIQUE (slug);
+
+
+ALTER TABLE ONLY public.organizations
+    ADD CONSTRAINT organizations_invite_code_key UNIQUE (invite_code);
 
 
 --
