@@ -19,6 +19,9 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
 --
 -- Name: public; Type: SCHEMA; Schema: -; Owner: -
 --
@@ -60,11 +63,9 @@ CREATE TYPE public.message_scope AS ENUM (
 
 CREATE TYPE public.user_role AS ENUM (
     'admin',
-    'volunteer',
     'lighting',
     'sound',
     'media',
-    'instrumentalists'
 );
 
 
