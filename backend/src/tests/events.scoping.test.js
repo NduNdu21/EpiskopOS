@@ -1,6 +1,6 @@
 const request = require("supertest");
 const jwt = require("jsonwebtoken");
-const app = require("../app"); // your Express app, exported WITHOUT app.listen
+const { app } = require("../app"); // your Express app, exported WITHOUT app.listen
 const pool = require("./setup");
 
 let orgA, orgB, userA, userB, tokenA, tokenB, eventA;

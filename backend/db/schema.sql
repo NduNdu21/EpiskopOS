@@ -145,6 +145,7 @@ CREATE TABLE public.messages (
     team_target text,
     event_id uuid,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
+    organization_id uuid NOT NULL,
     CONSTRAINT chk_team_target_scope CHECK ((((scope = 'broadcast'::public.message_scope) AND (team_target IS NULL)) OR ((scope = 'team'::public.message_scope) AND (team_target IS NOT NULL))))
 );
 
@@ -340,6 +341,10 @@ CREATE INDEX idx_messages_team_target ON public.messages USING btree (team_targe
 
 CREATE INDEX idx_users_organization_id ON public.users USING btree (organization_id);
 
+--
+
+CREATE INDEX idx_messages_organization_id ON public.messages USING btree (organization_id);
+
 
 --
 -- Name: attendance attendance_event_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
@@ -396,6 +401,12 @@ ALTER TABLE ONLY public.messages
 ALTER TABLE ONLY public.messages
     ADD CONSTRAINT messages_sender_id_fkey FOREIGN KEY (sender_id) REFERENCES public.users(id) ON DELETE CASCADE;
 
+--
+-- Name: messages messages_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.messages
+    ADD CONSTRAINT messages_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id);
 
 --
 -- Name: push_subscriptions push_subscriptions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
