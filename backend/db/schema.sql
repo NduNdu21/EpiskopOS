@@ -16,9 +16,6 @@ SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
 
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-
 --
 -- Name: public; Type: SCHEMA; Schema: -; Owner: -
 --
@@ -80,6 +77,9 @@ $$;
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 --
 -- Name: attendance; Type: TABLE; Schema: public; Owner: -
