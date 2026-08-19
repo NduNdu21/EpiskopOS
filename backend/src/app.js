@@ -3,6 +3,7 @@ const cors = require("cors");
 const http = require("http");
 const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
+const pool = require("./config/db");
 
 const app = express();
 app.set("trust proxy", 1);
@@ -97,7 +98,20 @@ io.on("connection", (socket) => {
   // no client-supplied org id, it comes from the verified token
   socket.join(`general:${orgId}`);
 
-  socket.on("join_service", (eventId) => socket.join(eventId));
+  socket.on("join_service", async (eventId) => {
+    try {
+      const check = await pool.query(
+        `SELECT id FROM events WHERE id = $1 AND organization_id = $2`,
+        [eventId, orgId],
+      );
+      if (check.rows.length === 0) {
+        return; // event doesn't exist or belongs to another org — silently refuse
+      }
+      socket.join(eventId);
+    } catch (err) {
+      console.error("join_service error:", err.message);
+    }
+  });
   socket.on("leave_service", (eventId) => socket.leave(eventId));
 
   socket.on("join_rooms", () => {
