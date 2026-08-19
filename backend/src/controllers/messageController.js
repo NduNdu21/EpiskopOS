@@ -59,6 +59,13 @@ exports.getMessages = async (req, res) => {
 exports.createMessage = async (req, res) => {
   const { content, scope, team_target, event_id } = req.body;
   const { id: sender_id, role } = req.user;
+  const orgId = req.organization_id;
+
+  if (scope === "broadcast") {
+    req.io.to(`general:${orgId}`).emit("new_message", payload);
+  } else {
+    req.io.to(`team:${orgId}:${team_target}`).emit("new_message", payload);
+  }
 
   if (!content || !scope) {
     return res.status(400).json({ error: "content and scope are required" });

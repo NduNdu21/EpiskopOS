@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const http = require("http");
 const { Server } = require("socket.io");
+const jwt = require("jsonwebtoken");
 
 const app = express();
 app.set("trust proxy", 1);
@@ -71,29 +72,48 @@ app.use("/internal", internalRoutes);
 
 require("./config/webpush");
 
+// Socket.IO connection handling
+io.use((socket, next) => {
+  const token = socket.handshake.auth?.token;
+  if (!token) {
+    return next(new Error("Authentication required"));
+  }
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ["HS256"] });
+    socket.user = decoded; // { id, role, organization_id }
+    next();
+  } catch (err) {
+    next(new Error("Invalid or expired token"));
+  }
+});
+
 io.on("connection", (socket) => {
-  console.log("Client connected:", socket.id);
+  console.log("Client connected:", socket.id, "org:", socket.user.organization_id);
+
+  const orgId = socket.user.organization_id;
+  const role = socket.user.role;
+
+  // Every connected client auto-joins their org's general room —
+  // no client-supplied org id, it comes from the verified token
+  socket.join(`general:${orgId}`);
 
   socket.on("join_service", (eventId) => socket.join(eventId));
-  socket.on("join_general", () => socket.join("general"));
   socket.on("leave_service", (eventId) => socket.leave(eventId));
 
-  socket.on("join_rooms", ({ role }) => {
-    socket.join("broadcast");
-
+  socket.on("join_rooms", () => {
+    // Fixed: real role values now (was sound_volunteer/lights_volunteer/media_volunteer,
+    // which never matched actual users.role values)
     const teamMap = {
-      sound_volunteer: "team:sound",
-      lights_volunteer: "team:lights",
-      media_volunteer: "team:media",
+      sound: `team:${orgId}:sound`,
+      lighting: `team:${orgId}:lighting`,
+      media: `team:${orgId}:media`,
     };
 
     const teamRoom = teamMap[role];
     if (teamRoom) socket.join(teamRoom);
 
     if (role === "admin") {
-      ["team:sound", "team:lights", "team:media"].forEach((room) => {
-        socket.join(room);
-      });
+      Object.values(teamMap).forEach((room) => socket.join(room));
     }
   });
 
