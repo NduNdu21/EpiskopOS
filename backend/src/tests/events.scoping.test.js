@@ -7,8 +7,9 @@ let orgA, orgB, userA, userB, tokenA, tokenB, eventA;
 
 beforeAll(async () => {
   const orgs = await pool.query(
-    `INSERT INTO organizations (name, slug) VALUES ('Org A', 'org-a'), ('Org B', 'org-b') RETURNING id`
-  );
+  `INSERT INTO organizations (name, slug, invite_code) VALUES ($1, $2, $3), ($4, $5, $6) RETURNING id`,
+  ["Test Org A", "test-org-a-" + Date.now(), "TESTCODEA" + Date.now(), "Test Org B", "test-org-b-" + Date.now(), "TESTCODEB" + Date.now()]
+);
   [orgA, orgB] = orgs.rows.map(r => r.id);
 
   const users = await pool.query(
