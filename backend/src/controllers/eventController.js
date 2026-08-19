@@ -416,7 +416,7 @@ exports.nextSegment = async (req, res) => {
     );
     const segment = segResult.rows[0];
     if (segment) {
-      const subs = await getSegmentSubscriptions(segment.id, event.id);
+      const subs = await getSegmentSubscriptions(segment.id, event.id, req.organization_id);
       await sendToSubscriptions(subs, {
         title: event.title,
         body: `Now on: ${segment.title}`,
@@ -462,7 +462,7 @@ exports.prevSegment = async (req, res) => {
     );
     const segment = segResult.rows[0];
     if (segment) {
-      const subs = await getSegmentSubscriptions(segment.id, event.id);
+      const subs = await getSegmentSubscriptions(segment.id, event.id, req.organization_id);
       await sendToSubscriptions(subs, {
         title: event.title,
         body: `Now on: ${segment.title}`,
@@ -498,7 +498,7 @@ exports.endService = async (req, res) => {
 
     const io = req.app.get("io");
     io.to(req.params.id).emit("service_update", { type: "END_SERVICE", event });
-    io.to("general").emit("service_update", { type: "END_SERVICE", event });
+    io.to(`general:${event.organization_id}`).emit("service_update", { type: "END_SERVICE", event });
 
     res.json(event);
   } catch (err) {

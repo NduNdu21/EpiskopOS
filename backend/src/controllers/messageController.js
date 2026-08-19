@@ -61,12 +61,6 @@ exports.createMessage = async (req, res) => {
   const { id: sender_id, role } = req.user;
   const orgId = req.organization_id;
 
-  if (scope === "broadcast") {
-    req.io.to(`general:${orgId}`).emit("new_message", payload);
-  } else {
-    req.io.to(`team:${orgId}:${team_target}`).emit("new_message", payload);
-  }
-
   if (!content || !scope) {
     return res.status(400).json({ error: "content and scope are required" });
   }
@@ -129,7 +123,11 @@ exports.createMessage = async (req, res) => {
       sender_role: sender.role,
     };
 
-    req.io.emit("new_message", payload);
+    if (scope === "broadcast") {
+      req.io.to(`general:${orgId}`).emit("new_message", payload);
+    } else {
+      req.io.to(`team:${orgId}:${team_target}`).emit("new_message", payload);
+    }
 
     res.status(201).json(payload);
   } catch (err) {
