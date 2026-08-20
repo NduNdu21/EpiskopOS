@@ -159,9 +159,6 @@ describe("team room scoping", () => {
 });
 
 describe("join_service org scoping", () => {
-  // NOTE: paths assumed as POST /api/events/:id/go-live and /api/events/:id/end-service
-  // — confirm against eventRoutes.js before running.
-
   test("socket can join an event room belonging to its own org and receives updates", async () => {
     const socket = connectSocket(tokenAdminA);
     await waitFor(socket, "connect");
@@ -171,14 +168,14 @@ describe("join_service org scoping", () => {
 
     const got = waitFor(socket, "service_update");
     await request(app)
-      .post(`/api/events/${eventA}/go-live`)
+      .post(`/api/events/${eventA}/golive`)
       .set("Authorization", `Bearer ${tokenAdminA}`);
 
     const update = await got;
     expect(update.type).toBe("GO_LIVE");
 
     await request(app)
-      .post(`/api/events/${eventA}/end-service`)
+      .post(`/api/events/${eventA}/end`)
       .set("Authorization", `Bearer ${tokenAdminA}`);
 
     socket.disconnect();
@@ -195,14 +192,14 @@ describe("join_service org scoping", () => {
     socketB.on("service_update", (msg) => receivedB.push(msg));
 
     await request(app)
-      .post(`/api/events/${eventA}/go-live`)
+      .post(`/api/events/${eventA}/golive`)
       .set("Authorization", `Bearer ${tokenAdminA}`);
 
     await new Promise((r) => setTimeout(r, 300));
     expect(receivedB.length).toBe(0);
 
     await request(app)
-      .post(`/api/events/${eventA}/end-service`)
+      .post(`/api/events/${eventA}/end`)
       .set("Authorization", `Bearer ${tokenAdminA}`);
 
     socketB.disconnect();
@@ -220,13 +217,13 @@ describe("go-live / end-service general-room broadcast scoping", () => {
 
     const gotGoLive = waitFor(socketA, "service_update");
     await request(app)
-      .post(`/api/events/${eventA}/go-live`)
+      .post(`/api/events/${eventA}/golive`)
       .set("Authorization", `Bearer ${tokenAdminA}`);
     expect((await gotGoLive).type).toBe("GO_LIVE");
 
     const gotEnd = waitFor(socketA, "service_update");
     await request(app)
-      .post(`/api/events/${eventA}/end-service`)
+      .post(`/api/events/${eventA}/end`)
       .set("Authorization", `Bearer ${tokenAdminA}`);
     expect((await gotEnd).type).toBe("END_SERVICE");
 
