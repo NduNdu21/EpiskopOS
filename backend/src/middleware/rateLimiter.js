@@ -7,6 +7,7 @@ exports.apiLimiter = rateLimit({
   message: { message: "Too many requests from this IP, please try again after 15 minutes." },
   standardHeaders: true, 
   legacyHeaders: false, 
+  skip: () => process.env.NODE_ENV === "test",
 });
 
 // Stricter auth limiter (e.g., 10 requests per hour)
@@ -16,4 +17,5 @@ exports.authLimiter = rateLimit({
   message: { message: "Too many authentication attempts from this IP, please try again after an hour." },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: () => process.env.NODE_ENV === "test",
 });
