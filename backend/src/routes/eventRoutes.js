@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
+const requireUsername = require("../middleware/requireUsername");
 const {
   getEvents,
   createEvent,
@@ -22,6 +23,7 @@ const {
 
 // All routes require login
 router.use(authMiddleware);
+router.use(requireUsername);
 
 //Live service routes must be before /:id routes
 router.get("/live", getLiveEvent);

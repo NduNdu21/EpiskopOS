@@ -200,7 +200,8 @@ CREATE TABLE public.users (
     role public.user_role NOT NULL,
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     status text DEFAULT 'approved'::text NOT NULL,
-    organization_id uuid NOT NULL
+    organization_id uuid NOT NULL,
+    username character varying(50)
 );
 
 
@@ -302,6 +303,14 @@ ALTER TABLE ONLY public.segment_teams
 
 ALTER TABLE ONLY public.users
     ADD CONSTRAINT users_email_key UNIQUE (email);
+
+
+--
+-- Name: users users_org_username_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.users
+    ADD CONSTRAINT users_org_username_key UNIQUE (organization_id, username);
 
 
 --
