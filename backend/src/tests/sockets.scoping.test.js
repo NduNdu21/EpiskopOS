@@ -43,8 +43,8 @@ beforeAll(async () => {
   );
   [adminA, adminB] = users.rows.map((r) => r.id);
 
-  tokenAdminA = jwt.sign({ id: adminA, role: "admin", organization_id: orgA }, process.env.JWT_SECRET);
-  tokenAdminB = jwt.sign({ id: adminB, role: "admin", organization_id: orgB }, process.env.JWT_SECRET);
+  tokenAdminA = jwt.sign({ id: adminA, role: "admin", organization_id: orgA, username: "sockadmina" }, process.env.JWT_SECRET);
+  tokenAdminB = jwt.sign({ id: adminB, role: "admin", organization_id: orgB, username: "sockadminb" }, process.env.JWT_SECRET);
 
   const event = await pool.query(
     `INSERT INTO events (title, event_date, created_by, organization_id)
@@ -125,8 +125,8 @@ describe("team room scoping", () => {
     const soundUser = users.rows.find((u) => u.role === "sound");
     const lightingUser = users.rows.find((u) => u.role === "lighting");
 
-    const tokenSound = jwt.sign({ id: soundUser.id, role: "sound", organization_id: orgA }, process.env.JWT_SECRET);
-    const tokenLighting = jwt.sign({ id: lightingUser.id, role: "lighting", organization_id: orgA }, process.env.JWT_SECRET);
+    const tokenSound = jwt.sign({ id: soundUser.id, role: "sound", organization_id: orgA, username: "soundvol" }, process.env.JWT_SECRET);
+    const tokenLighting = jwt.sign({ id: lightingUser.id, role: "lighting", organization_id: orgA, username: "lightvol" }, process.env.JWT_SECRET);
 
     const socketSound = connectSocket(tokenSound);
     const socketLighting = connectSocket(tokenLighting);

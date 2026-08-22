@@ -21,8 +21,8 @@ beforeAll(async () => {
   );
   [userA, userB] = users.rows.map(r => r.id);
 
-  tokenA = jwt.sign({ id: userA, role: "admin", organization_id: orgA }, process.env.JWT_SECRET);
-  tokenB = jwt.sign({ id: userB, role: "admin", organization_id: orgB }, process.env.JWT_SECRET);
+  tokenA = jwt.sign({ id: userA, role: "admin", organization_id: orgA, username: "msgadmina" }, process.env.JWT_SECRET);
+  tokenB = jwt.sign({ id: userB, role: "admin", organization_id: orgB, username: "msgadminb" }, process.env.JWT_SECRET);
 
   const msg = await pool.query(
     `INSERT INTO messages (sender_id, content, scope, organization_id)
