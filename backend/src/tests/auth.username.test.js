@@ -153,31 +153,38 @@ describe("setUsername endpoint", () => {
   });
 
   test("cannot set a username already taken within the same org", async () => {
-    const loginRes = await request(app)
-      .post("/api/auth/login")
-      .send({ username: migratedUserUsername, inviteCode: inviteCodeA, password: migratedUserPassword });
-    const token = loginRes.body.token;
+    // Use dedicated throwaway users so this test doesn't mutate the shared
+    // fixtures (migratedUserUsername/legacyUserEmail) that other tests rely on.
+    const suffix = Date.now();
+    const hash = await bcrypt.hash(PASSWORD, 10);
+    const holderUsername = "holder" + suffix;
+    const takerEmail = "taker-" + suffix + "@test.com";
 
-    // Try to "set" a username that another org A user already has — should be a no-op
-    // for that user's own username, but this proves the collision path returns 409
-    // when attempting to claim someone else's.
-    const otherUsername = "legacy-taker-" + Date.now();
-    await request(app)
-      .patch("/api/auth/username")
-      .set("Authorization", `Bearer ${token}`)
-      .send({ username: otherUsername });
+    const created = await pool.query(
+      `INSERT INTO users (name, email, password_hash, role, organization_id, username, status)
+       VALUES
+         ('Holder', $1, $2, 'admin', $3, $4, 'approved'),
+         ('Taker', $5, $2, 'admin', $3, NULL, 'approved')
+       RETURNING id, email`,
+      ["holder-" + suffix + "@test.com", hash, orgA, holderUsername, takerEmail],
+    );
+    const takerId = created.rows.find((r) => r.email === takerEmail).id;
 
-    const collideRes = await request(app)
+    const takerLoginRes = await request(app)
       .post("/api/auth/login")
-      .send({ email: legacyUserEmail, password: legacyUserPassword });
-    const legacyToken = collideRes.body.token;
+      .send({ email: takerEmail, password: PASSWORD });
 
     const res = await request(app)
       .patch("/api/auth/username")
-      .set("Authorization", `Bearer ${legacyToken}`)
-      .send({ username: otherUsername });
+      .set("Authorization", `Bearer ${takerLoginRes.body.token}`)
+      .send({ username: holderUsername }); // already taken by Holder in the same org
 
     expect(res.status).toBe(409);
+
+    await pool.query(`DELETE FROM users WHERE id IN ($1, $2)`, [
+      takerId,
+      created.rows.find((r) => r.email !== takerEmail).id,
+    ]);
   });
 
   test("rejects usernames with invalid characters or length", async () => {
