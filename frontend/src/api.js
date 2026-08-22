@@ -1,4 +1,3 @@
-
 const API_BASE = import.meta.env.VITE_API_BASE;
 
 console.log("API_BASE:", API_BASE);
@@ -10,6 +9,10 @@ async function handleResponse(res) {
     if (res.status === 401) {
       localStorage.removeItem("token");
       window.location.href = "/login";
+      return;
+    }
+    if (res.status === 403 && data?.code === "USERNAME_REQUIRED") {
+      window.location.href = "/set-username";
       return;
     }
     const message = data?.message || data?.error || res.statusText;
@@ -45,6 +48,18 @@ export const loginUser = async (payload) => {
   const data = await handleResponse(res);
   const token = data?.data?.token || data?.token;
   if (token) localStorage.setItem("token", token);
+  return data;
+};
+
+export const setUsername = async (username) => {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_BASE}/auth/username`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ username }),
+  });
+  const data = await handleResponse(res);
+  if (data?.token) localStorage.setItem("token", data.token);
   return data;
 };
 

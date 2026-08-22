@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './index.css';
 import Register from "./pages/Register";
 import Login from "./pages/Login";
+import SetUsername from "./pages/SetUsername";
 import HomePage from './pages/HomePage';
 import ProtectedRoute from "./components/ProtectedRoute";
 import Events from "./pages/Events";
@@ -19,6 +20,9 @@ function App() {
       <Routes>
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/set-username" element={
+          <ProtectedRoute><SetUsername /></ProtectedRoute>
+        } />
         <Route path="/" element={
           <ProtectedRoute><Layout><HomePage /></Layout></ProtectedRoute>
         } />

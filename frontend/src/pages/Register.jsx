@@ -8,6 +8,7 @@ import { Eye, EyeOff } from "lucide-react";
 const ROLES = ["sound", "lighting", "media"];
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const usernameRegex = /^[a-zA-Z0-9._-]{3,50}$/;
 
 const validate = (form) => {
   const errors = {};
@@ -25,6 +26,18 @@ const validate = (form) => {
     errors.email = "Email is required.";
   } else if (!emailRegex.test(form.email)) {
     errors.email = "Please enter a valid email address.";
+  }
+
+  // Username
+  if (!form.username.trim()) {
+    errors.username = "Username is required.";
+  } else if (!usernameRegex.test(form.username)) {
+    errors.username = "3-50 characters: letters, numbers, dots, dashes, underscores only.";
+  }
+
+  // Invite code
+  if (!form.inviteCode.trim()) {
+    errors.inviteCode = "Organization invite code is required.";
   }
 
   // Password
@@ -55,7 +68,15 @@ const FieldError = ({ message }) =>
   ) : null;
 
 const Register = () => {
-  const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "", role: "" });
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    username: "",
+    inviteCode: "",
+    password: "",
+    confirmPassword: "",
+    role: "",
+  });
   const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
@@ -86,11 +107,10 @@ const Register = () => {
 
     try {
       setLoading(true);
-      await registerUser(payload);
-      setRegistered(true);
       // Strip confirmPassword before sending to API
       const { confirmPassword: _confirmPassword, ...payload } = form;
       const data = await registerUser(payload);
+      setRegistered(true);
       alert(data?.message || "Registered successfully.");
       navigate("/login");
     } catch (err) {
@@ -171,6 +191,37 @@ const Register = () => {
               className={inputClass("email")}
             />
             <FieldError message={fieldErrors.email} />
+          </div>
+
+          {/* Username */}
+          <div className="flex flex-col gap-1">
+            <label className="sr-only" htmlFor="username">Username</label>
+            <input
+              id="username"
+              name="username"
+              type="text"
+              value={form.username}
+              placeholder="Username"
+              onChange={handleChange}
+              autoComplete="username"
+              className={inputClass("username")}
+            />
+            <FieldError message={fieldErrors.username} />
+          </div>
+
+          {/* Invite code */}
+          <div className="flex flex-col gap-1">
+            <label className="sr-only" htmlFor="inviteCode">Organization invite code</label>
+            <input
+              id="inviteCode"
+              name="inviteCode"
+              type="text"
+              value={form.inviteCode}
+              placeholder="Organization invite code"
+              onChange={handleChange}
+              className={inputClass("inviteCode")}
+            />
+            <FieldError message={fieldErrors.inviteCode} />
           </div>
 
           {/* Password */}
