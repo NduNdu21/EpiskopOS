@@ -3,6 +3,7 @@ import './index.css';
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 import SetUsername from "./pages/SetUsername";
+import CreateOrganization from "./pages/CreateOrganization";
 import HomePage from './pages/HomePage';
 import ProtectedRoute from "./components/ProtectedRoute";
 import Events from "./pages/Events";
@@ -19,6 +20,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/register" element={<Register />} />
+        <Route path="/register/organization" element={<CreateOrganization />} />
         <Route path="/login" element={<Login />} />
         <Route path="/set-username" element={
           <ProtectedRoute><SetUsername /></ProtectedRoute>

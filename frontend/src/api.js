@@ -38,6 +38,20 @@ export const registerUser = async (data) => {
     return json;
 }
 
+export const registerOrganization = async (data) => {
+    const response = await fetch(`${API_BASE}/auth/register/organization`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json"},
+        body: JSON.stringify(data),
+    });
+
+    const text = await response.text();
+    const json = text ? JSON.parse(text) : {};
+    if (!response.ok) throw new Error(json.message);
+    if (json?.token) localStorage.setItem("token", json.token);
+    return json;
+}
+
 
 export const loginUser = async (payload) => {
   const res = await fetch(`${API_BASE}/auth/login`, {
