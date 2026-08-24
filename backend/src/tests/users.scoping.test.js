@@ -19,23 +19,15 @@ beforeAll(async () => {
   [orgA, orgB] = orgs.rows.map((r) => r.id);
 
   const users = await pool.query(
-    `INSERT INTO users (name, password_hash, role, organization_id, username, status)
-     VALUES
-       ('Admin A', 'x', 'admin', $5, 'usersadmina' || $6, 'approved'),
-       ('Volunteer A', 'x', 'sound', $5, 'usersvola' || $6, 'approved'),
-       ('Pending A', 'x', 'sound', $5, 'userspenda' || $6, 'pending'),
-       ('Admin B', 'x', 'admin', $7, 'usersadminb' || $6, 'approved')
-     RETURNING id, role`,
-    [
-      "usersadmina-" + suffix + "@test.com",
-      "usersvola-" + suffix + "@test.com",
-      "userspenda-" + suffix + "@test.com",
-      "usersadminb-" + suffix + "@test.com",
-      orgA,
-      suffix,
-      orgB,
-    ],
-  );
+  `INSERT INTO users (name, password_hash, role, organization_id, username, status)
+   VALUES
+     ('Admin A', 'x', 'admin', $1, 'usersadmina' || $2, 'approved'),
+     ('Volunteer A', 'x', 'sound', $1, 'usersvola' || $2, 'approved'),
+     ('Pending A', 'x', 'sound', $1, 'userspenda' || $2, 'pending'),
+     ('Admin B', 'x', 'admin', $3, 'usersadminb' || $2, 'approved')
+   RETURNING id, role`,
+  [orgA, suffix, orgB],
+);
 
   adminA = users.rows[0].id;
   volunteerA = users.rows[1].id;
