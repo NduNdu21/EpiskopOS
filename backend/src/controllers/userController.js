@@ -20,16 +20,18 @@ const getMe = async (req, res) => {
 
 const getUsers = async (req, res) => {
   const { role: callerRole } = req.user;
+  const organizationId = req.organization_id;
   try {
     let result;
     if (callerRole === "admin") {
       result = await pool.query(
-        "SELECT id, name, role, status FROM users ORDER BY status DESC, role, name",
+        "SELECT id, name, role, status FROM users WHERE organization_id = $1 ORDER BY status DESC, role, name",
+        [organizationId],
       );
     } else {
       result = await pool.query(
-        "SELECT id, name, role FROM users WHERE role = $1 AND status = $2 ORDER BY name",
-        [callerRole, "approved"],
+        "SELECT id, name, role FROM users WHERE role = $1 AND status = $2 AND organization_id = $3 ORDER BY name",
+        [callerRole, "approved", organizationId],
       );
     }
     res.json(result.rows);
@@ -40,6 +42,9 @@ const getUsers = async (req, res) => {
 };
 
 const updateUserRole = async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ error: "Forbidden" });
+  }
   const { id } = req.params;
   const { role } = req.body;
   if (!ALL_ROLES.includes(role)) {
@@ -47,8 +52,8 @@ const updateUserRole = async (req, res) => {
   }
   try {
     const result = await pool.query(
-      "UPDATE users SET role = $1 WHERE id = $2 RETURNING id, name, role",
-      [role, id],
+      "UPDATE users SET role = $1 WHERE id = $2 AND organization_id = $3 RETURNING id, name, role",
+      [role, id, req.organization_id],
     );
     if (result.rowCount === 0)
       return res.status(404).json({ error: "User not found" });
@@ -66,8 +71,8 @@ const approveUser = async (req, res) => {
   const { id } = req.params;
   try {
     const result = await pool.query(
-      "UPDATE users SET status = 'approved' WHERE id = $1 RETURNING id, name, role, status",
-      [id],
+      "UPDATE users SET status = 'approved' WHERE id = $1 AND organization_id = $2 RETURNING id, name, role, status",
+      [id, req.organization_id],
     );
     if (result.rowCount === 0)
       return res.status(404).json({ error: "User not found" });
@@ -79,12 +84,18 @@ const approveUser = async (req, res) => {
 };
 
 const deleteUser = async (req, res) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ error: "Forbidden" });
+  }
   const { id } = req.params;
   if (id === req.user.id) {
     return res.status(400).json({ error: "You cannot remove yourself" });
   }
   try {
-    const result = await pool.query("DELETE FROM users WHERE id = $1", [id]);
+    const result = await pool.query(
+      "DELETE FROM users WHERE id = $1 AND organization_id = $2",
+      [id, req.organization_id],
+    );
     if (result.rowCount === 0)
       return res.status(404).json({ error: "User not found" });
     res.json({ message: "User removed" });
