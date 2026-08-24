@@ -41,6 +41,12 @@ const io = new Server(server, { cors: corsOptions });
 app.use(express.json());
 app.set("io", io);
 
+// Rate limiters must be mounted BEFORE the routes they're meant to guard —
+// Express applies middleware in registration order, so a limiter registered
+// after a route has already been handled never runs for that route.
+app.use("/api/auth", authLimiter);
+app.use("/api", apiLimiter);
+
 const authRoutes = require("./routes/authRoutes");
 app.use("/api/auth", authRoutes);
 
@@ -61,9 +67,6 @@ const attendanceRoutes = require("./routes/attendanceRoutes");
 app.use("/api/attendance", attendanceRoutes);
 
 app.get("/health", (req, res) => res.status(200).json({ status: "ok" }));
-
-app.use("/api/auth", authLimiter);
-app.use("/api", apiLimiter);
 
 const pushRoutes = require("./routes/pushRoutes");
 app.use("/api/push", pushRoutes);
