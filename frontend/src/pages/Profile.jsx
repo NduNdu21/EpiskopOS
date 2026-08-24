@@ -6,21 +6,21 @@ const Profile = () => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [editing, setEditing] = useState(false);
-    const [form, setForm] = useState({ name: "", email: "" });
+    const [form, setForm] = useState({ name: "" });
     const [status, setStatus] = useState({ saving: false, error: "", success: "" });
 
     useEffect(() => {
         getMe()
             .then(data => {
                 setUser(data);
-                setForm({ name: data.name || "", email: data.email || "" });
+                setForm({ name: data.name || "" });
                 setLoading(false);
             })
             .catch(() => setLoading(false));
     }, []);
 
     const startEditing = () => {
-        setForm({ name: user?.name || "", email: user?.email || "" });
+        setForm({ name: user?.name || "" });
         setStatus({ saving: false, error: "", success: "" });
         setEditing(true);
     };
@@ -36,13 +36,13 @@ const Profile = () => {
 
     const handleSave = async (e) => {
         e.preventDefault();
-        if (!form.name.trim() || !form.email.trim()) {
-            setStatus({ saving: false, error: "Name and email are required", success: "" });
+        if (!form.name.trim()) {
+            setStatus({ saving: false, error: "Name is required", success: "" });
             return;
         }
         setStatus({ saving: true, error: "", success: "" });
         try {
-            const updated = await updateProfile({ name: form.name.trim(), email: form.email.trim() });
+            const updated = await updateProfile({ name: form.name.trim() });
             setUser(updated);
             setStatus({ saving: false, error: "", success: "Profile updated" });
             setEditing(false);
@@ -99,15 +99,9 @@ const Profile = () => {
                             />
                         </div>
                         <div className="bg-black/20 p-5 rounded-2xl">
-                            <label className="text-sm text-beige/60 uppercase tracking-wider mb-2 block">Email Address</label>
-                            <input
-                                type="email"
-                                name="email"
-                                value={form.email}
-                                onChange={handleChange}
-                                required
-                                className="w-full bg-transparent text-beige text-lg border-b border-beige/30 focus:outline-none focus:border-beige pb-1"
-                            />
+                            <label className="text-sm text-beige/60 uppercase tracking-wider mb-2 block">Username</label>
+                            <p className="text-beige text-lg">{user?.username}</p>
+                            <p className="text-beige/50 text-xs mt-1">Your username can't be changed here.</p>
                         </div>
 
                         {status.error && (
@@ -138,8 +132,8 @@ const Profile = () => {
                 ) : (
                     <div className="space-y-6">
                         <div className="bg-black/20 p-5 rounded-2xl">
-                            <p className="text-sm text-beige/60 uppercase tracking-wider mb-1">Email Address</p>
-                            <p className="text-beige text-lg">{user?.email}</p>
+                            <p className="text-sm text-beige/60 uppercase tracking-wider mb-1">Username</p>
+                            <p className="text-beige text-lg">{user?.username}</p>
                         </div>
                         <div className="bg-black/20 p-5 rounded-2xl">
                             <p className="text-sm text-beige/60 uppercase tracking-wider mb-1">Account Status</p>

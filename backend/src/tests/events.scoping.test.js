@@ -13,9 +13,9 @@ beforeAll(async () => {
   [orgA, orgB] = orgs.rows.map(r => r.id);
 
   const users = await pool.query(
-    `INSERT INTO users (name, email, password_hash, role, organization_id, username)
-     VALUES ('Admin A', 'a@test.com', 'x', 'admin', $1, 'admina'),
-            ('Admin B', 'b@test.com', 'x', 'admin', $2, 'adminb')
+    `INSERT INTO users (name, password_hash, role, organization_id, username)
+     VALUES ('Admin A', 'x', 'admin', $1, 'admina'),
+            ('Admin B', 'x', 'admin', $2, 'adminb')
      RETURNING id`,
     [orgA, orgB]
   );

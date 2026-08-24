@@ -195,7 +195,6 @@ CREATE TABLE public.segment_teams (
 CREATE TABLE public.users (
     id uuid DEFAULT uuid_generate_v4() NOT NULL,
     name character varying(100) NOT NULL,
-    email character varying(150) NOT NULL,
     password_hash text NOT NULL,
     role public.user_role NOT NULL,
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
@@ -300,10 +299,6 @@ ALTER TABLE ONLY public.segment_teams
 --
 -- Name: users users_email_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
-
-ALTER TABLE ONLY public.users
-    ADD CONSTRAINT users_email_key UNIQUE (email);
-
 
 --
 -- Name: users users_org_username_key; Type: CONSTRAINT; Schema: public; Owner: -

@@ -5,7 +5,7 @@ const { ALL_ROLES } = require("../constants/roles");
 const getMe = async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT id, name, email, role, status, organization_id FROM users WHERE id = $1",
+      "SELECT id, name, username, role, status, organization_id FROM users WHERE id = $1",
       [req.user.id],
     );
     if (result.rows.length === 0) {
@@ -146,35 +146,19 @@ const updatePassword = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   const name = req.body.name?.trim();
-  const email = req.body.email?.trim();
-  if (!name && !email) {
+  if (!name) {
     return res.status(400).json({ error: "Nothing to update" });
   }
   try {
-    const fields = [];
-    const values = [];
-    let idx = 1;
-    if (name) {
-      fields.push(`name = $${idx++}`);
-      values.push(name);
-    }
-    if (email) {
-      fields.push(`email = $${idx++}`);
-      values.push(email);
-    }
-    values.push(req.user.id);
     const result = await pool.query(
-      `UPDATE users SET ${fields.join(", ")} WHERE id = $${idx} RETURNING id, name, email, role`,
-      values,
+      `UPDATE users SET name = $1 WHERE id = $2 RETURNING id, name, username, role`,
+      [name, req.user.id],
     );
     if (result.rowCount === 0) {
       return res.status(404).json({ error: "User not found" });
     }
     res.json(result.rows[0]);
   } catch (err) {
-    if (err.code === "23505") {
-      return res.status(409).json({ error: "Email already in use" });
-    }
     console.error("updateProfile error:", err.message);
     res.status(500).json({ error: "Failed to update profile" });
   }

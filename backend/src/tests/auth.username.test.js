@@ -1,12 +1,12 @@
 const request = require("supertest");
+const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const { app } = require("../app");
 const pool = require("./setup");
 
 let orgA, orgB, inviteCodeA, inviteCodeB;
-let legacyUserEmail, legacyUserPassword;
-let migratedUserUsername, migratedUserPassword;
-let pendingUsername, pendingPassword;
+let userAId, userAUsername, userAPassword;
+let pendingBUsername, pendingBPassword;
 
 const PASSWORD = "correct-horse-battery-staple";
 
@@ -26,31 +26,23 @@ beforeAll(async () => {
 
   const hash = await bcrypt.hash(PASSWORD, 10);
 
-  // Legacy user: no username set, must log in by email
-  legacyUserEmail = "legacy-" + suffix + "@test.com";
-  legacyUserPassword = PASSWORD;
+  userAUsername = "usera" + suffix;
+  userAPassword = PASSWORD;
 
-  // Migrated user: has a username, in org A, logs in via username + inviteCodeA
-  migratedUserUsername = "migrated" + suffix;
-  migratedUserPassword = PASSWORD;
+  // Same username string, deliberately reused in org B — proves login
+  // resolves per-org via invite code, not globally.
+  pendingBUsername = "usera" + suffix;
+  pendingBPassword = PASSWORD;
 
-  // Same username, different org — proves username uniqueness is per-org,
-  // and that inviteCodeA cannot be used to log in as the org B user
-  pendingUsername = "migrated" + suffix; // deliberately same as migratedUserUsername
-  pendingPassword = PASSWORD;
-
-  await pool.query(
-    `INSERT INTO users (name, email, password_hash, role, organization_id, username, status)
+  const users = await pool.query(
+    `INSERT INTO users (name, password_hash, role, organization_id, username, status)
      VALUES
-       ('Legacy User', $1, $2, 'admin', $3, NULL, 'approved'),
-       ('Migrated User', $4, $2, 'admin', $3, $5, 'approved'),
-       ('Pending Org B User', $6, $2, 'admin', $7, $5, 'pending')`,
-    [
-      legacyUserEmail, hash, orgA,
-      "migrated-" + suffix + "@test.com", migratedUserUsername,
-      "pendingb-" + suffix + "@test.com", orgB,
-    ],
+       ('User A', $1, 'admin', $2, $3, 'approved'),
+       ('Pending B', $1, 'admin', $4, $5, 'pending')
+     RETURNING id`,
+    [hash, orgA, userAUsername, orgB, pendingBUsername],
   );
+  userAId = users.rows[0].id;
 });
 
 afterAll(async () => {
@@ -59,70 +51,59 @@ afterAll(async () => {
   await pool.end();
 });
 
-describe("legacy email login (no username set)", () => {
-  test("logs in successfully with email + password", async () => {
-    const res = await request(app)
-      .post("/api/auth/login")
-      .send({ email: legacyUserEmail, password: legacyUserPassword });
-    expect(res.status).toBe(200);
-    expect(res.body.success).toBe(true);
-    expect(res.body.token).toBeDefined();
-  });
-
-  test("mustSetUsername is true for a user with no username", async () => {
-    const res = await request(app)
-      .post("/api/auth/login")
-      .send({ email: legacyUserEmail, password: legacyUserPassword });
-    expect(res.body.mustSetUsername).toBe(true);
-  });
-});
-
 describe("username + invite code login", () => {
   test("logs in successfully with correct username + invite code + password", async () => {
     const res = await request(app)
       .post("/api/auth/login")
-      .send({ username: migratedUserUsername, inviteCode: inviteCodeA, password: migratedUserPassword });
+      .send({ username: userAUsername, inviteCode: inviteCodeA, password: userAPassword });
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.token).toBeDefined();
   });
 
-  test("mustSetUsername is false once a username is set", async () => {
+  test("same username in a different org resolves via that org's invite code, not the wrong one", async () => {
+    // pendingBUsername === userAUsername, but lives in org B and is pending.
+    // Logging in with org B's invite code must resolve to the org B user
+    // (blocked for pending status), never silently succeed as org A's user.
     const res = await request(app)
       .post("/api/auth/login")
-      .send({ username: migratedUserUsername, inviteCode: inviteCodeA, password: migratedUserPassword });
-    expect(res.body.mustSetUsername).toBe(false);
-  });
-
-  test("same username in a different org does not authenticate against the wrong invite code", async () => {
-    // migratedUserUsername exists in org A; pendingUsername (same string) exists in org B.
-    // Logging in with org A's invite code must resolve to the org A user, not leak into org B.
-    const res = await request(app)
-      .post("/api/auth/login")
-      .send({ username: migratedUserUsername, inviteCode: inviteCodeB, password: pendingPassword });
-    // org B's user with this username is 'pending' — should be blocked, not silently authenticated as org A's user
+      .send({ username: pendingBUsername, inviteCode: inviteCodeB, password: pendingBPassword });
     expect(res.status).toBe(403);
   });
 
-  test("wrong invite code for a username that doesn't exist in that org returns invalid credentials", async () => {
+  test("username that doesn't exist in that org returns invalid credentials", async () => {
     const res = await request(app)
       .post("/api/auth/login")
       .send({ username: "no-such-user-anywhere", inviteCode: inviteCodeA, password: PASSWORD });
     expect(res.status).toBe(401);
   });
 
-  test("username without an invite code is rejected with 400, not treated as email lookup", async () => {
+  test("missing invite code is rejected with 400", async () => {
     const res = await request(app)
       .post("/api/auth/login")
-      .send({ username: migratedUserUsername, password: migratedUserPassword });
+      .send({ username: userAUsername, password: userAPassword });
+    expect(res.status).toBe(400);
+  });
+
+  test("missing username is rejected with 400", async () => {
+    const res = await request(app)
+      .post("/api/auth/login")
+      .send({ inviteCode: inviteCodeA, password: userAPassword });
     expect(res.status).toBe(400);
   });
 
   test("invalid invite code returns 404", async () => {
     const res = await request(app)
       .post("/api/auth/login")
-      .send({ username: migratedUserUsername, inviteCode: "NOT-A-REAL-CODE", password: migratedUserPassword });
+      .send({ username: userAUsername, inviteCode: "NOT-A-REAL-CODE", password: userAPassword });
     expect(res.status).toBe(404);
+  });
+
+  test("wrong password returns 401", async () => {
+    const res = await request(app)
+      .post("/api/auth/login")
+      .send({ username: userAUsername, inviteCode: inviteCodeA, password: "wrong-password" });
+    expect(res.status).toBe(401);
   });
 });
 
@@ -134,13 +115,13 @@ describe("setUsername endpoint", () => {
     expect(res.status).toBe(401);
   });
 
-  test("legacy user can set a username and receives a reissued token with it embedded", async () => {
+  test("an authenticated user can change their username and receives a reissued token", async () => {
     const loginRes = await request(app)
       .post("/api/auth/login")
-      .send({ email: legacyUserEmail, password: legacyUserPassword });
+      .send({ username: userAUsername, inviteCode: inviteCodeA, password: userAPassword });
     const token = loginRes.body.token;
 
-    const newUsername = "newlyset" + Date.now();
+    const newUsername = "renamed" + Date.now();
     const res = await request(app)
       .patch("/api/auth/username")
       .set("Authorization", `Bearer ${token}`)
@@ -150,52 +131,48 @@ describe("setUsername endpoint", () => {
     expect(res.body.username).toBe(newUsername);
     expect(res.body.token).toBeDefined();
     expect(res.body.token).not.toBe(token);
+
+    // Restore so later tests in this file that log in as userAUsername still resolve.
+    await pool.query(`UPDATE users SET username = $1 WHERE id = $2`, [userAUsername, userAId]);
   });
 
-  test("cannot set a username already taken within the same org", async () => {
-    // Use dedicated throwaway users so this test doesn't mutate the shared
-    // fixtures (migratedUserUsername/legacyUserEmail) that other tests rely on.
+  test("cannot change a username to one already taken within the same org", async () => {
     const suffix = Date.now();
     const hash = await bcrypt.hash(PASSWORD, 10);
     const holderUsername = "holder" + suffix;
-    const takerEmail = "taker-" + suffix + "@test.com";
+    const takerUsername = "taker" + suffix;
 
     const created = await pool.query(
-      `INSERT INTO users (name, email, password_hash, role, organization_id, username, status)
+      `INSERT INTO users (name, password_hash, role, organization_id, username, status)
        VALUES
-         ('Holder', $1, $2, 'admin', $3, $4, 'approved'),
-         ('Taker', $5, $2, 'admin', $3, NULL, 'approved')
-       RETURNING id, email`,
-      ["holder-" + suffix + "@test.com", hash, orgA, holderUsername, takerEmail],
+         ('Holder', $1, 'admin', $2, $3, 'approved'),
+         ('Taker', $1, 'admin', $2, $4, 'approved')
+       RETURNING id, username`,
+      [hash, orgA, holderUsername, takerUsername],
     );
-    const takerId = created.rows.find((r) => r.email === takerEmail).id;
 
-    const takerLoginRes = await request(app)
+    const loginRes = await request(app)
       .post("/api/auth/login")
-      .send({ email: takerEmail, password: PASSWORD });
+      .send({ username: takerUsername, inviteCode: inviteCodeA, password: PASSWORD });
 
     const res = await request(app)
       .patch("/api/auth/username")
-      .set("Authorization", `Bearer ${takerLoginRes.body.token}`)
-      .send({ username: holderUsername }); // already taken by Holder in the same org
+      .set("Authorization", `Bearer ${loginRes.body.token}`)
+      .send({ username: holderUsername }); // already taken in the same org
 
     expect(res.status).toBe(409);
 
-    await pool.query(`DELETE FROM users WHERE id IN ($1, $2)`, [
-      takerId,
-      created.rows.find((r) => r.email !== takerEmail).id,
-    ]);
+    await pool.query(`DELETE FROM users WHERE id IN ($1, $2)`, created.rows.map((r) => r.id));
   });
 
   test("rejects usernames with invalid characters or length", async () => {
     const loginRes = await request(app)
       .post("/api/auth/login")
-      .send({ username: migratedUserUsername, inviteCode: inviteCodeA, password: migratedUserPassword });
-    const token = loginRes.body.token;
+      .send({ username: userAUsername, inviteCode: inviteCodeA, password: userAPassword });
 
     const res = await request(app)
       .patch("/api/auth/username")
-      .set("Authorization", `Bearer ${token}`)
+      .set("Authorization", `Bearer ${loginRes.body.token}`)
       .send({ username: "a" }); // too short
 
     expect(res.status).toBe(400);
@@ -203,32 +180,20 @@ describe("setUsername endpoint", () => {
 });
 
 describe("requireUsername enforcement on protected routes", () => {
-  test("a user with no username is blocked from a protected route with 403 USERNAME_REQUIRED", async () => {
-    const loginRes = await request(app)
-      .post("/api/auth/login")
-      .send({ email: legacyUserEmail, password: legacyUserPassword });
-    // legacyUserEmail's username may have been set by the earlier test in this
-    // file depending on run order within this describe block's isolation —
-    // use a fresh never-touched legacy user to keep this test independent.
-    const suffix = Date.now();
-    const hash = await bcrypt.hash(PASSWORD, 10);
-    const fresh = await pool.query(
-      `INSERT INTO users (name, email, password_hash, role, organization_id, username, status)
-       VALUES ('Fresh Legacy', $1, $2, 'admin', $3, NULL, 'approved') RETURNING id`,
-      ["fresh-legacy-" + suffix + "@test.com", hash, orgA],
+  // A user with no username can no longer be produced via the public login
+  // flow (login requires a username to find the user at all), so this
+  // crafts a token directly to exercise the middleware's defensive path.
+  test("a token with no username claim is blocked with 403 USERNAME_REQUIRED", async () => {
+    const token = jwt.sign(
+      { id: userAId, role: "admin", organization_id: orgA },
+      process.env.JWT_SECRET,
     );
-
-    const freshLoginRes = await request(app)
-      .post("/api/auth/login")
-      .send({ email: "fresh-legacy-" + suffix + "@test.com", password: PASSWORD });
 
     const res = await request(app)
       .get("/api/events")
-      .set("Authorization", `Bearer ${freshLoginRes.body.token}`);
+      .set("Authorization", `Bearer ${token}`);
 
     expect(res.status).toBe(403);
     expect(res.body.code).toBe("USERNAME_REQUIRED");
-
-    await pool.query(`DELETE FROM users WHERE id = $1`, [fresh.rows[0].id]);
   });
 });

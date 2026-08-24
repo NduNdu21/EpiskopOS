@@ -10,7 +10,7 @@ function generateInviteCode() {
 
 // register controller — joins an existing org via invite code
 exports.register = async (req, res) => {
-  const { name, email, username, password, role, inviteCode } = req.body;
+  const { name, username, password, role, inviteCode } = req.body;
   if (!ASSIGNABLE_ROLES.includes(role)) {
     return res.status(400).json({
       message: `Invalid role. Must be one of: ${ASSIGNABLE_ROLES.join(", ")}`,
@@ -28,22 +28,17 @@ exports.register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const result = await pool.query(
-      `INSERT INTO users(name, email, username, password_hash, role, status, organization_id)
-            VALUES($1, $2, $3, $4, $5, $6, $7)
-            RETURNING id, name, email, username, role, status, organization_id`,
-      [name, email, username, hashedPassword, role, 'pending', organizationId],
+      `INSERT INTO users(name, username, password_hash, role, status, organization_id)
+            VALUES($1, $2, $3, $4, $5, $6)
+            RETURNING id, name, username, role, status, organization_id`,
+      [name, username, hashedPassword, role, 'pending', organizationId],
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
     if (err.code === "23505") {
-      if (err.constraint === "users_org_username_key") {
-        return res
-          .status(409)
-          .json({ message: "That username is already taken in this organization" });
-      }
       return res
         .status(409)
-        .json({ message: "An account with that email already exists" });
+        .json({ message: "That username is already taken in this organization" });
     }
     res.status(500).json({ error: err.message });
   }
@@ -51,10 +46,10 @@ exports.register = async (req, res) => {
 
 // registerOrganization — creates a new org and its first admin
 exports.registerOrganization = async (req, res) => {
-  const { orgName, name, email, username, password } = req.body;
-  if (!orgName || !name || !email || !username || !password) {
+  const { orgName, name, username, password } = req.body;
+  if (!orgName || !name || !username || !password) {
     return res.status(400).json({
-      message: "Organization name, your name, email, username and password are required",
+      message: "Organization name, your name, username and password are required",
     });
   }
 
@@ -75,10 +70,10 @@ exports.registerOrganization = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const userResult = await client.query(
-      `INSERT INTO users (name, email, username, password_hash, role, status, organization_id)
-       VALUES ($1, $2, $3, $4, 'admin', 'approved', $5)
+      `INSERT INTO users (name, username, password_hash, role, status, organization_id)
+       VALUES ($1, $2, $3, 'admin', 'approved', $4)
        RETURNING *`,
-      [name, email, username, hashedPassword, organizationId],
+      [name, username, hashedPassword, organizationId],
     );
 
     await client.query("COMMIT");
@@ -88,13 +83,8 @@ exports.registerOrganization = async (req, res) => {
   } catch (err) {
     await client.query("ROLLBACK");
     if (err.code === "23505") {
-      if (err.constraint === "users_org_username_key") {
-        return res
-          .status(409)
-          .json({ message: "That username is already taken in this organization" });
-      }
       return res.status(409).json({
-        message: "An account with that email, or an organization with that name, already exists",
+        message: "That username is already taken, or an organization with that name already exists",
       });
     }
     res.status(500).json({ error: err.message });
@@ -103,43 +93,32 @@ exports.registerOrganization = async (req, res) => {
   }
 };
 
-// login controller — supports two paths:
-//  1. email + password (legacy, existing users without a username yet)
-//  2. username + inviteCode + password (new path, org-scoped since usernames
-//     are only unique per-org, not globally)
+// login controller — username + inviteCode + password.
+// Org-scoped because usernames are only unique per-org, not globally.
 exports.login = async (req, res) => {
   try {
-    const { email, username, inviteCode, password } = req.body;
+    const { username, inviteCode, password } = req.body;
 
-    let user;
-
-    if (username) {
-      if (!inviteCode) {
-        return res
-          .status(400)
-          .json({ message: "Organization invite code is required to log in with a username" });
-      }
-
-      const orgResult = await pool.query(
-        `SELECT id FROM organizations WHERE invite_code = $1`,
-        [inviteCode],
-      );
-      if (orgResult.rows.length === 0) {
-        return res.status(404).json({ message: "Invalid invite code" });
-      }
-      const organizationId = orgResult.rows[0].id;
-
-      const result = await pool.query(
-        `SELECT * FROM users WHERE username = $1 AND organization_id = $2`,
-        [username, organizationId],
-      );
-      user = result.rows[0];
-    } else if (email) {
-      const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
-      user = result.rows[0];
-    } else {
-      return res.status(400).json({ message: "Email, or username and invite code, are required" });
+    if (!username || !inviteCode) {
+      return res
+        .status(400)
+        .json({ message: "Username and organization invite code are required" });
     }
+
+    const orgResult = await pool.query(
+      `SELECT id FROM organizations WHERE invite_code = $1`,
+      [inviteCode],
+    );
+    if (orgResult.rows.length === 0) {
+      return res.status(404).json({ message: "Invalid invite code" });
+    }
+    const organizationId = orgResult.rows[0].id;
+
+    const result = await pool.query(
+      `SELECT * FROM users WHERE username = $1 AND organization_id = $2`,
+      [username, organizationId],
+    );
+    const user = result.rows[0];
 
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
@@ -155,12 +134,7 @@ exports.login = async (req, res) => {
       });
     }
     const token = generateToken(user);
-    res.json({
-      success: true,
-      token,
-      role: user.role,
-      mustSetUsername: !user.username,
-    });
+    res.json({ success: true, token, role: user.role });
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: "Server error" });

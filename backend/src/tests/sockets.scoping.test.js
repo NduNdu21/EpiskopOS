@@ -35,11 +35,11 @@ beforeAll(async () => {
   [orgA, orgB] = orgs.rows.map((r) => r.id);
 
   const users = await pool.query(
-    `INSERT INTO users (name, email, password_hash, role, organization_id)
-     VALUES ('Admin SockA', 'socka-' || $3 || '@test.com', 'x', 'admin', $1),
-            ('Admin SockB', 'sockb-' || $3 || '@test.com', 'x', 'admin', $2)
+    `INSERT INTO users (name, password_hash, role, organization_id)
+     VALUES ('Admin SockA', 'x', 'admin', $1),
+            ('Admin SockB', 'x', 'admin', $2)
      RETURNING id`,
-    [orgA, orgB, Date.now()],
+    [orgA, orgB],
   );
   [adminA, adminB] = users.rows.map((r) => r.id);
 
@@ -116,11 +116,11 @@ describe("team room scoping", () => {
   test("team-targeted message only reaches sockets in that team room", async () => {
     const suffix = Date.now();
     const users = await pool.query(
-      `INSERT INTO users (name, email, password_hash, role, organization_id)
-       VALUES ('Sound Vol', 'soundvol-' || $2 || '@test.com', 'x', 'sound', $1),
-              ('Lighting Vol', 'lightvol-' || $2 || '@test.com', 'x', 'lighting', $1)
+      `INSERT INTO users (name, password_hash, role, organization_id)
+       VALUES ('Sound Vol', 'x', 'sound', $1),
+              ('Lighting Vol', 'x', 'lighting', $1)
        RETURNING id, role`,
-      [orgA, suffix],
+      [orgA],
     );
     const soundUser = users.rows.find((u) => u.role === "sound");
     const lightingUser = users.rows.find((u) => u.role === "lighting");

@@ -3,7 +3,6 @@ import { registerOrganization } from "../api";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Copy, Check } from "lucide-react";
 
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const usernameRegex = /^[a-zA-Z0-9._-]{3,50}$/;
 
 const validate = (form) => {
@@ -18,12 +17,6 @@ const validate = (form) => {
     errors.name = "Full name is required.";
   } else if (nameParts.length < 2) {
     errors.name = "Please enter your first and last name.";
-  }
-
-  if (!form.email.trim()) {
-    errors.email = "Email is required.";
-  } else if (!emailRegex.test(form.email)) {
-    errors.email = "Please enter a valid email address.";
   }
 
   if (!form.username.trim()) {
@@ -54,7 +47,6 @@ const CreateOrganization = () => {
   const [form, setForm] = useState({
     orgName: "",
     name: "",
-    email: "",
     username: "",
     password: "",
     confirmPassword: "",
@@ -120,7 +112,7 @@ const CreateOrganization = () => {
             <h2 className="text-xl font-semibold text-beige mb-3">Organization created</h2>
             <p className="text-beige/70 text-sm leading-relaxed mb-6">
               Share this invite code with your team so they can join. You'll need it
-              again yourself if you ever log in with your username instead of your email.
+              again yourself if you ever forget it — write it down somewhere safe.
             </p>
 
             <div className="flex items-center justify-between gap-3 bg-white/15 border border-beige/40 rounded-2xl px-5 py-4 mb-6">
@@ -191,21 +183,6 @@ const CreateOrganization = () => {
               className={inputClass("name")}
             />
             <FieldError message={fieldErrors.name} />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="sr-only" htmlFor="email">Email</label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              value={form.email}
-              placeholder="example@email.com"
-              onChange={handleChange}
-              autoComplete="email"
-              className={inputClass("email")}
-            />
-            <FieldError message={fieldErrors.email} />
           </div>
 
           <div className="flex flex-col gap-1">

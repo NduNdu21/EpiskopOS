@@ -7,7 +7,6 @@ import { Eye, EyeOff } from "lucide-react";
 
 const ROLES = ["sound", "lighting", "media"];
 
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const usernameRegex = /^[a-zA-Z0-9._-]{3,50}$/;
 
 const validate = (form) => {
@@ -19,13 +18,6 @@ const validate = (form) => {
     errors.name = "Full name is required.";
   } else if (nameParts.length < 2) {
     errors.name = "Please enter your first and last name.";
-  }
-
-  // Email
-  if (!form.email.trim()) {
-    errors.email = "Email is required.";
-  } else if (!emailRegex.test(form.email)) {
-    errors.email = "Please enter a valid email address.";
   }
 
   // Username
@@ -70,7 +62,6 @@ const FieldError = ({ message }) =>
 const Register = () => {
   const [form, setForm] = useState({
     name: "",
-    email: "",
     username: "",
     inviteCode: "",
     password: "",
@@ -175,22 +166,6 @@ const Register = () => {
               className={inputClass("name")}
             />
             <FieldError message={fieldErrors.name} />
-          </div>
-
-          {/* Email */}
-          <div className="flex flex-col gap-1">
-            <label className="sr-only" htmlFor="email">Email</label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              value={form.email}
-              placeholder="example@email.com"
-              onChange={handleChange}
-              autoComplete="email"
-              className={inputClass("email")}
-            />
-            <FieldError message={fieldErrors.email} />
           </div>
 
           {/* Username */}
