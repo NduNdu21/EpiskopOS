@@ -7,9 +7,16 @@ async function handleResponse(res) {
   const data = isJson ? await res.json() : null;
   if (!res.ok) {
     if (res.status === 401) {
-      localStorage.removeItem("token");
-      window.location.href = "/login";
-      return;
+      // Login/register endpoints send no Authorization header — a 401 there
+      // is a credential failure the caller should display, not a session
+      // expiry. Everything else that gets a 401 was an authenticated
+      // request whose token is invalid/expired.
+      const isAuthEndpoint = res.url.includes("/auth/login") || res.url.includes("/auth/register");
+      if (!isAuthEndpoint) {
+        localStorage.removeItem("token");
+        window.location.href = "/login";
+        return;
+      }
     }
     if (res.status === 403 && data?.code === "USERNAME_REQUIRED") {
       window.location.href = "/set-username";
