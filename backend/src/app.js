@@ -39,6 +39,18 @@ app.use(cors(corsOptions));
 const io = new Server(server, { cors: corsOptions });
 
 app.use(express.json());
+
+// TEMPORARY — remove after diagnosing the rate limiter IP inconsistency
+app.use((req, res, next) => {
+  if (req.path.startsWith("/api/auth")) {
+    console.log("[ratelimit-debug]", {
+      path: req.path,
+      "req.ip": req.ip,
+      "x-forwarded-for": req.headers["x-forwarded-for"],
+    });
+  }
+  next();
+});
 app.set("io", io);
 
 // Rate limiters must be mounted BEFORE the routes they're meant to guard —
