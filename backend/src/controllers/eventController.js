@@ -392,8 +392,12 @@ exports.nextSegment = async (req, res) => {
   }
   try {
     const result = await pool.query(
-      `UPDATE events 
-       SET current_segment_index = current_segment_index + 1
+      `UPDATE events e
+       SET current_segment_index = LEAST(
+             e.current_segment_index + 1,
+             (SELECT COUNT(*) - 1 FROM event_segments WHERE event_id = e.id)
+           ),
+           segment_started_at = NOW()
        WHERE id = $1 AND organization_id = $2
        RETURNING *`,
       [req.params.id, req.organization_id],
@@ -439,7 +443,8 @@ exports.prevSegment = async (req, res) => {
   try {
     const result = await pool.query(
       `UPDATE events
-       SET current_segment_index = GREATEST(current_segment_index - 1, 0)
+       SET current_segment_index = GREATEST(current_segment_index - 1, 0),
+           segment_started_at = NOW()
        WHERE id = $1 AND organization_id = $2
        RETURNING *`,
       [req.params.id, req.organization_id],
