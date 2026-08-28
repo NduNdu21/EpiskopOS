@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { getLiveEvent, getSegments, nextSegment, prevSegment, endService } from "../api";
+import { getLiveEvent, getSegments, nextSegment, prevSegment, endService, getMessages } from "../api";
 import { getSocket } from "../socket";
 
 // Format seconds into mm:ss or shows elapsed if no duration
@@ -28,7 +28,10 @@ const Live = () => {
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(null);
+  const [stageMode, setStageMode] = useState(false);
+  const [messages, setMessages] = useState([]);
   const timerRef = useRef(null);
+  const stageRef = useRef(null);
 
   const token = localStorage.getItem("token");
   const payload = token ? JSON.parse(atob(token.split(".")[1])) : {};
@@ -38,6 +41,7 @@ const Live = () => {
   const activeSegment = segments[currentIndex] || null;
   const upcomingSegments = segments.slice(currentIndex + 1);
   const completedSegments = segments.slice(0, currentIndex);
+  const latestMessage = messages.length > 0 ? messages[messages.length - 1] : null;
 
   // Timer display logic
   const isOvertime = secondsLeft !== null && activeSegment?.duration_minutes && secondsLeft < 0;
@@ -64,6 +68,17 @@ const Live = () => {
     init();
   }, []);
 
+  // Fetch broadcast messages for the live event
+  useEffect(() => {
+    if (!event) {
+      setMessages([]);
+      return;
+    }
+    getMessages({ scope: "broadcast", event_id: event.id })
+      .then(setMessages)
+      .catch(() => {});
+  }, [event, event.id]);
+
   // Socket.IO — join room and listen for updates
   useEffect(() => {
     if (!event) return;
@@ -85,9 +100,16 @@ const Live = () => {
       }
     });
 
+    socket.on("new_message", (msg) => {
+      if (msg.scope === "broadcast" && msg.event_id === event.id) {
+        setMessages((prev) => [...prev, msg].slice(-20));
+      }
+    });
+
     return () => {
       socket.emit("leave_service", event.id);
       socket.off("service_update");
+      socket.off("new_message");
     };
   }, [event]);
 
@@ -119,6 +141,33 @@ const Live = () => {
 
     return () => clearInterval(timerRef.current);
   }, [event?.segment_started_at, event?.current_segment_index, activeSegment?.id]);
+
+  // Exit stage mode if the browser drops fullscreen (Esc key etc.)
+  useEffect(() => {
+    const handleFsChange = () => {
+      if (!document.fullscreenElement) setStageMode(false);
+    };
+    document.addEventListener("fullscreenchange", handleFsChange);
+    return () => document.removeEventListener("fullscreenchange", handleFsChange);
+  }, []);
+
+  const enterStageMode = async () => {
+    setStageMode(true);
+    try {
+      await stageRef.current?.requestFullscreen?.();
+    } catch {
+      // Fullscreen can be blocked/unsupported (notably iOS Safari on
+      // non-video elements) — stage mode still renders in-page either way.
+    }
+  };
+
+  const exitStageMode = async () => {
+    if (document.fullscreenElement) {
+      // eslint-disable-next-line no-empty
+      try { await document.exitFullscreen(); } catch {}
+    }
+    setStageMode(false);
+  };
 
   const handleNext = async () => {
     if (!event || actionLoading) return;
@@ -176,12 +225,20 @@ const Live = () => {
 
       {/* Header */}
       <div className="px-5 pt-4 pb-6">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
-          </span>
-          <span className="text-xs font-semibold tracking-widest text-red-400 uppercase">Live</span>
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
+            </span>
+            <span className="text-xs font-semibold tracking-widest text-red-400 uppercase">Live</span>
+          </div>
+          <button
+            onClick={enterStageMode}
+            className="text-xs font-semibold tracking-widest uppercase text-dark-teal/70 border border-dark-teal/20 rounded-full px-3 py-1.5"
+          >
+            Stage Mode
+          </button>
         </div>
         <h1 className="text-dark-teal text-xl font-bold tracking-tight">{event.title}</h1>
         <p className="text-dark-teal/80 text-sm mt-0.5">
@@ -317,6 +374,73 @@ const Live = () => {
         )}
 
       </div>
+
+      {/* Stage mode overlay */}
+      {stageMode && (
+        <div ref={stageRef} className="fixed inset-0 z-50 bg-ink-black text-off-white flex flex-col">
+          <div className="flex items-center justify-between px-6 pt-5">
+            <span className="text-xs font-semibold tracking-widest uppercase text-white/40">
+              {currentIndex + 1} / {segments.length}
+            </span>
+            <div className="flex items-center gap-2">
+              {isAdmin && (
+                <>
+                  <button
+                    onClick={handlePrev}
+                    disabled={actionLoading || currentIndex === 0}
+                    className="px-3 py-1.5 rounded-lg bg-white/10 text-white text-xs font-semibold disabled:opacity-30"
+                  >
+                    ← Prev
+                  </button>
+                  <button
+                    onClick={handleNext}
+                    disabled={actionLoading || currentIndex >= segments.length - 1}
+                    className="px-3 py-1.5 rounded-lg bg-white/10 text-white text-xs font-semibold disabled:opacity-30"
+                  >
+                    Next →
+                  </button>
+                </>
+              )}
+              <button
+                onClick={exitStageMode}
+                className="px-3 py-1.5 rounded-lg border border-white/20 text-white/70 text-xs font-semibold"
+              >
+                Exit
+              </button>
+            </div>
+          </div>
+
+          <div className="flex-1 flex items-center justify-center">
+            {secondsLeft !== null ? (
+              <span
+                className={`font-black tabular-nums leading-none ${isOvertime ? "text-red-400" : "text-beige"}`}
+                style={{ fontSize: "min(28vw, 260px)" }}
+              >
+                {isOvertime ? `+${formatTime(secondsLeft)}` : formatTime(secondsLeft)}
+              </span>
+            ) : (
+              <span className="text-white/30 text-2xl font-semibold">No timer set</span>
+            )}
+          </div>
+
+          <div className="px-8 pb-6 text-center">
+            <h2 className="text-4xl md:text-6xl font-bold tracking-tight text-beige">
+              {activeSegment?.title || "—"}
+            </h2>
+          </div>
+
+          <div className="border-t border-white/10 bg-black/30 px-8 py-5 min-h-[4.5rem] flex items-center justify-center">
+            {latestMessage ? (
+              <p className="text-white/80 text-base text-center">
+                <span className="font-semibold text-white/50">{latestMessage.sender_name}: </span>
+                {latestMessage.content}
+              </p>
+            ) : (
+              <p className="text-white/30 text-sm">No messages</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
