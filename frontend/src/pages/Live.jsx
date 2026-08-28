@@ -140,7 +140,7 @@ const Live = () => {
     timerRef.current = setInterval(tick, 1000);
 
     return () => clearInterval(timerRef.current);
-  }, [event.segment_started_at, event.current_segment_index, activeSegment.id, activeSegment]);
+  }, [event?.segment_started_at, event?.current_segment_index, activeSegment?.id]);
 
   // Exit stage mode if the browser drops fullscreen (Esc key etc.)
   useEffect(() => {
@@ -413,7 +413,7 @@ const Live = () => {
           <div className="flex-1 flex items-center justify-center">
             {secondsLeft !== null ? (
               <span
-                className={`font-black tabular-nums leading-none ${isOvertime ? "text-red-400" : "text-off-white"}`}
+                className={`font-black tabular-nums leading-none ${isOvertime ? "text-red-400" : "text-beige"}`}
                 style={{ fontSize: "min(28vw, 260px)" }}
               >
                 {isOvertime ? `+${formatTime(secondsLeft)}` : formatTime(secondsLeft)}
@@ -424,7 +424,7 @@ const Live = () => {
           </div>
 
           <div className="px-8 pb-6 text-center">
-            <h2 className="text-4xl md:text-6xl font-bold tracking-tight">
+            <h2 className="text-4xl md:text-6xl font-bold tracking-tight text-beige">
               {activeSegment?.title || "—"}
             </h2>
           </div>
