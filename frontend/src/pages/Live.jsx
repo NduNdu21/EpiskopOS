@@ -89,7 +89,7 @@ const Live = () => {
     getMessages({ scope: "broadcast", event_id: event.id })
       .then(setMessages)
       .catch(() => {});
-  }, [event?.id]);
+  }, [event, event?.id]);
 
   // Socket.IO — join room and listen for updates.
   // Depends only on event?.id, not the whole event object, so a socket

@@ -8,6 +8,94 @@ import { CSS } from "@dnd-kit/utilities";
 
 const TEAMS = ["admin", "lighting", "sound", "media"];
 
+// Static class names on purpose — Tailwind's JIT scanner only picks up
+// literal class strings, not runtime-interpolated ones (same reason
+// text-off-white silently failed before it was hardcoded in the config).
+const TYPE_META = {
+    praise_worship: {
+        label: "Praise & Worship",
+        dot: "bg-[#C5AFEE]",
+        border: "border-l-[#C5AFEE]",
+        chip: "bg-[#C5AFEE]/10 text-[#C5AFEE]",
+    },
+    preaching: {
+        label: "Preaching",
+        dot: "bg-[#E99998]",
+        border: "border-l-[#E99998]",
+        chip: "bg-[#E99998]/10 text-[#E99998]",
+    },
+    prayer: {
+        label: "Prayer",
+        dot: "bg-[#ACF58B]",
+        border: "border-l-[#ACF58B]",
+        chip: "bg-[#ACF58B]/10 text-[#ACF58B]",
+    },
+    ministration: {
+        label: "Ministration",
+        dot: "bg-[#FEBF7A]",
+        border: "border-l-[#FEBF7A]",
+        chip: "bg-[#FEBF7A]/10 text-[#FEBF7A]",
+    },
+    offering: {
+        label: "Offering",
+        dot: "bg-[#8CC0F0]",
+        border: "border-l-[#8CC0F0]",
+        chip: "bg-[#8CC0F0]/10 text-[#8CC0F0]",
+    },
+    announcements: {
+        label: "Announcements",
+        dot: "bg-[#FFFF69]",
+        border: "border-l-[#FFFF69]",
+        chip: "bg-[#FFFF69]/10 text-[#FFFF69]",
+    },
+    first_timers: {
+        label: "First Timers",
+        dot: "bg-[#FFA6FF]",
+        border: "border-l-[#FFA6FF]",
+        chip: "bg-[#FFA6FF]/30 text-ink-black",
+    },
+    grace: {
+        label: "Grace",
+        dot: "bg-[#ACF58A]",
+        border: "border-l-[#ACF58A]",
+        chip: "bg-[#ACF58A]/40 text-ink-black",
+    },
+    setup: {
+        label: "Setup",
+        dot: "bg-[#D9D9D9]",
+        border: "border-l-[#D9D9D9]",
+        chip: "bg-[#D9D9D9]/40 text-ink-black",
+    },
+};
+
+const SEGMENT_TYPES = Object.keys(TYPE_META);
+
+const TypeSelector = ({ selected, onChange }) => (
+    <div className="flex flex-col gap-2">
+        <label className="text-sm font-medium text-ink-black/70 pl-1">Type</label>
+        <div className="flex flex-wrap gap-2">
+            {SEGMENT_TYPES.map((type) => {
+                const isSelected = selected === type;
+                const meta = TYPE_META[type];
+                return (
+                    <button
+                        key={type}
+                        type="button"
+                        onClick={() => onChange(isSelected ? "" : type)}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${isSelected
+                            ? `${meta.chip} border-transparent ring-1 ring-inset ring-black/10`
+                            : "bg-gray-50 text-gray-400 border-gray-200"
+                            }`}
+                    >
+                        <span className={`w-2 h-2 rounded-full ring-1 ring-black/10 ${meta.dot}`} />
+                        {meta.label}
+                    </button>
+                );
+            })}
+        </div>
+    </div>
+);
+
 const TeamSelector = ({ selected, onChange }) => (
     <div className="flex flex-col gap-2">
         <label className="text-sm font-medium text-ink-black/70 pl-1">Teams</label>
@@ -54,11 +142,14 @@ const SortableSegmentCard = ({ seg, isAdmin, onTap }) => {
         opacity: isDragging ? 0.5 : 1,
     };
 
+    const typeMeta = TYPE_META[seg.type];
+
     return (
         <div
             ref={setNodeRef}
             style={style}
-            className="bg-white rounded-2xl px-4 py-4 shadow-sm flex items-start gap-3"
+            className={`bg-white rounded-2xl px-4 py-4 shadow-sm flex items-start gap-3 border-l-4 ${typeMeta ? typeMeta.border : "border-l-gray-200"
+                }`}
         >
             {/* Drag handle — only visible to admins */}
             {isAdmin && (
@@ -83,6 +174,15 @@ const SortableSegmentCard = ({ seg, isAdmin, onTap }) => {
                     </span>
                 </div>
 
+                {typeMeta && (
+                    <span
+                        className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium mt-2 ${typeMeta.chip}`}
+                    >
+                        <span className={`w-1.5 h-1.5 rounded-full ring-1 ring-black/10 ${typeMeta.dot}`} />
+                        {typeMeta.label}
+                    </span>
+                )}
+
                 {seg.teams?.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-2">
                         {seg.teams.map((team) => (
@@ -105,10 +205,10 @@ const SortableSegmentCard = ({ seg, isAdmin, onTap }) => {
 };
 
 const EMPTY_SEGMENT_FORM = {
-    title: "", duration_minutes: "", teams: [], notes: "", order_index: ""
+    title: "", duration_minutes: "", teams: [], notes: "", order_index: "", type: ""
 };
 
-const SegmentFormFields = ({ values, onChangeField, onTeamsChange }) => (
+const SegmentFormFields = ({ values, onChangeField, onTeamsChange, onTypeChange }) => (
     <>
         <input
             name="title"
@@ -134,6 +234,10 @@ const SegmentFormFields = ({ values, onChangeField, onTeamsChange }) => (
                 ) : null
             )}
         </div>
+        <TypeSelector
+            selected={values.type}
+            onChange={onTypeChange}
+        />
         <TeamSelector
             selected={values.teams}
             onChange={onTeamsChange}
@@ -269,6 +373,7 @@ const EventSegment = () => {
             teams: seg.teams || [],
             notes: seg.notes || "",
             order_index: seg.order_index ?? "",
+            type: seg.type || "",
         });
         setEditError("");
     };
@@ -478,6 +583,9 @@ const EventSegment = () => {
                                 onTeamsChange={(teams) =>
                                     setForm((prev) => ({ ...prev, teams }))
                                 }
+                                onTypeChange={(type) =>
+                                    setForm((prev) => ({ ...prev, type }))
+                                }
                             />
                             {formError && <p className="text-red-500 text-sm">{formError}</p>}
                             <div className="flex gap-3 mt-2">
@@ -512,6 +620,9 @@ const EventSegment = () => {
                                 onChangeField={handleEditFormChange}
                                 onTeamsChange={(teams) =>
                                     setEditForm((prev) => ({ ...prev, teams }))
+                                }
+                                onTypeChange={(type) =>
+                                    setEditForm((prev) => ({ ...prev, type }))
                                 }
                             />
                             {editError && <p className="text-red-500 text-sm">{editError}</p>}
