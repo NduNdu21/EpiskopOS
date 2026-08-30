@@ -2,12 +2,13 @@ import { useEffect, useState, useRef, useMemo } from "react";
 import { getLiveEvent, getSegments, nextSegment, prevSegment, endService, getMessages } from "../api";
 import { getSocket } from "../socket";
 
-// Format seconds into mm:ss or shows elapsed if no duration
+// Format seconds into mm:ss, or h:mm:ss once it runs past an hour
 const formatTime = (totalSeconds) => {
   const abs = Math.abs(totalSeconds);
-  const m = String(Math.floor(abs / 60)).padStart(2, "0");
+  const h = Math.floor(abs / 3600);
+  const m = String(Math.floor((abs % 3600) / 60)).padStart(2, "0");
   const s = String(abs % 60).padStart(2, "0");
-  return `${m}:${s}`;
+  return h > 0 ? `${h}:${m}:${s}` : `${m}:${s}`;
 };
 
 //Helper for live service display
