@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { getLiveEvent, getSegments, nextSegment, prevSegment, endService, getMessages } from "../api";
 import { getSocket } from "../socket";
 
@@ -17,9 +17,20 @@ const normaliseSegments = (segs) =>
     teams: Array.isArray(seg.teams)
       ? seg.teams
       : seg.teams
-        ? seg.teams.replace(/[{}]/g, "").split(",").filter(Boolean)
+        ? seg.teams.replace(/[{}]/g, "").split(",").map((t) => t.trim()).filter(Boolean)
         : [],
   }));
+
+// Decode the JWT payload defensively — a malformed or tampered token
+// should never crash the component render.
+const decodeToken = (token) => {
+  if (!token) return {};
+  try {
+    return JSON.parse(atob(token.split(".")[1]));
+  } catch {
+    return {};
+  }
+};
 
 const Live = () => {
   const [event, setEvent] = useState(null);
@@ -33,8 +44,8 @@ const Live = () => {
   const timerRef = useRef(null);
   const stageRef = useRef(null);
 
-  const token = localStorage.getItem("token");
-  const payload = token ? JSON.parse(atob(token.split(".")[1])) : {};
+  // Parsed once per token value rather than re-parsed on every render.
+  const payload = useMemo(() => decodeToken(localStorage.getItem("token")), []);
   const isAdmin = payload.role === "admin";
 
   const currentIndex = event?.current_segment_index ?? 0;
@@ -79,14 +90,18 @@ const Live = () => {
       .catch(() => {});
   }, [event?.id]);
 
-  // Socket.IO — join room and listen for updates
+  // Socket.IO — join room and listen for updates.
+  // Depends only on event?.id, not the whole event object, so a socket
+  // update that replaces `event` doesn't tear down and re-register these
+  // listeners (which was causing join/leave spam on every update).
   useEffect(() => {
-    if (!event) return;
+    const eventId = event?.id;
+    if (!eventId) return;
 
     const socket = getSocket();
-    socket.emit("join_service", event.id);
+    socket.emit("join_service", eventId);
 
-    socket.on("service_update", async ({ type, event: updatedEvent }) => {
+    const handleServiceUpdate = async ({ type, event: updatedEvent }) => {
       setEvent(updatedEvent);
 
       if (type === "GO_LIVE") {
@@ -98,20 +113,26 @@ const Live = () => {
         setEvent(null);
         setSegments([]);
       }
-    });
+    };
 
-    socket.on("new_message", (msg) => {
-      if (msg.scope === "broadcast" && msg.event_id === event.id) {
+    const handleNewMessage = (msg) => {
+      if (msg.scope === "broadcast" && msg.event_id === eventId) {
         setMessages((prev) => [...prev, msg].slice(-20));
       }
-    });
+    };
+
+    socket.on("service_update", handleServiceUpdate);
+    socket.on("new_message", handleNewMessage);
 
     return () => {
-      socket.emit("leave_service", event.id);
-      socket.off("service_update");
-      socket.off("new_message");
+      socket.emit("leave_service", eventId);
+      // Pass the exact handler reference — socket.off(event) with no
+      // handler wipes out every listener on that event name, which is
+      // dangerous if the socket is a shared singleton used elsewhere.
+      socket.off("service_update", handleServiceUpdate);
+      socket.off("new_message", handleNewMessage);
     };
-  }, [event]);
+  }, [event?.id]);
 
   // Countdown timer
   useEffect(() => {
@@ -172,17 +193,27 @@ const Live = () => {
   const handleNext = async () => {
     if (!event || actionLoading) return;
     setActionLoading(true);
-    try { await nextSegment(event.id); }
-    catch { setError("Failed to advance segment."); }
-    finally { setActionLoading(false); }
+    try {
+      await nextSegment(event.id);
+      setError(null);
+    } catch {
+      setError("Failed to advance segment.");
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const handlePrev = async () => {
     if (!event || actionLoading) return;
     setActionLoading(true);
-    try { await prevSegment(event.id); }
-    catch { setError("Failed to go back."); }
-    finally { setActionLoading(false); }
+    try {
+      await prevSegment(event.id);
+      setError(null);
+    } catch {
+      setError("Failed to go back.");
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const handleEnd = async () => {
@@ -190,9 +221,14 @@ const Live = () => {
     const confirmed = window.confirm("End the service? This will close the live session for everyone.");
     if (!confirmed) return;
     setActionLoading(true);
-    try { await endService(event.id); }
-    catch { setError("Failed to end service."); }
-    finally { setActionLoading(false); }
+    try {
+      await endService(event.id);
+      setError(null);
+    } catch {
+      setError("Failed to end service.");
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   if (loading) {
