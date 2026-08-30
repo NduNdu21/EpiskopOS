@@ -179,7 +179,7 @@ exports.createSegment = async (req, res) => {
   if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Forbidden" });
   }
-  const { title, duration_minutes, notes, order_index, teams } = req.body;
+  const { title, duration_minutes, notes, order_index, teams, type } = req.body;
   if (!title || !duration_minutes) {
     return res.status(400).json({ message: "Title and duration are required" });
   }
@@ -194,10 +194,10 @@ exports.createSegment = async (req, res) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO event_segments (event_id, title, duration_minutes, notes, order_index)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO event_segments (event_id, title, duration_minutes, notes, order_index, type)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING *`,
-      [req.params.id, title, duration_minutes, notes, order_index || 0],
+      [req.params.id, title, duration_minutes, notes, order_index || 0, type || null],
     );
 
     const segment = result.rows[0];
@@ -237,20 +237,21 @@ exports.updateSegment = async (req, res) => {
   if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Forbidden" });
   }
-  const { title, duration_minutes, notes, order_index } = req.body;
+  const { title, duration_minutes, notes, order_index, type } = req.body;
   try {
     const result = await pool.query(
       `UPDATE event_segments es
-       SET title=$1, duration_minutes=$2, notes=$3, order_index=$4
+       SET title=$1, duration_minutes=$2, notes=$3, order_index=$4, type=$5
        FROM events e
-       WHERE es.id=$5 AND es.event_id=$6
-       AND es.event_id = e.id AND e.organization_id = $7
+       WHERE es.id=$6 AND es.event_id=$7
+       AND es.event_id = e.id AND e.organization_id = $8
        RETURNING es.*`,
       [
         title,
         duration_minutes,
         notes,
         order_index,
+        type || null,
         req.params.segmentId,
         req.params.id,
         req.organization_id,
