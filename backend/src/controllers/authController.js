@@ -1,12 +1,7 @@
 const pool = require("../config/db");
 const bcrypt = require("bcrypt");
-const crypto = require("crypto");
 const generateToken = require("../utils/generateToken");
 const { ASSIGNABLE_ROLES } = require("../constants/roles");
-
-function generateInviteCode() {
-  return crypto.randomBytes(4).toString("hex").toUpperCase();
-}
 
 // register controller — joins an existing org via invite code
 exports.register = async (req, res) => {
@@ -44,12 +39,20 @@ exports.register = async (req, res) => {
   }
 };
 
-// registerOrganization — creates a new org and its first admin
+// registerOrganization — creates a new org and its first admin.
+// inviteCode is now user-supplied, not generated.
 exports.registerOrganization = async (req, res) => {
-  const { orgName, name, username, password } = req.body;
-  if (!orgName || !name || !username || !password) {
+  const { orgName, name, username, password, inviteCode } = req.body;
+  if (!orgName || !name || !username || !password || !inviteCode) {
     return res.status(400).json({
-      message: "Organization name, your name, username and password are required",
+      message: "Organization name, your name, username, password and invite code are required",
+    });
+  }
+
+  const normalizedInviteCode = inviteCode.trim().toUpperCase();
+  if (!/^[A-Z0-9]{4,20}$/.test(normalizedInviteCode)) {
+    return res.status(400).json({
+      message: "Invite code must be 4-20 characters, letters and numbers only",
     });
   }
 
@@ -57,14 +60,13 @@ exports.registerOrganization = async (req, res) => {
   try {
     await client.query("BEGIN");
 
-    const inviteCode = generateInviteCode();
     const slug = orgName.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-");
 
     const orgResult = await client.query(
       `INSERT INTO organizations (name, slug, invite_code)
        VALUES ($1, $2, $3)
        RETURNING id`,
-      [orgName, slug, inviteCode],
+      [orgName, slug, normalizedInviteCode],
     );
     const organizationId = orgResult.rows[0].id;
 
@@ -79,12 +81,12 @@ exports.registerOrganization = async (req, res) => {
     await client.query("COMMIT");
 
     const token = generateToken(userResult.rows[0]);
-    res.status(201).json({ success: true, token, inviteCode, organizationId });
+    res.status(201).json({ success: true, token, inviteCode: normalizedInviteCode, organizationId });
   } catch (err) {
     await client.query("ROLLBACK");
     if (err.code === "23505") {
       return res.status(409).json({
-        message: "That username is already taken, or an organization with that name already exists",
+        message: "That invite code, username, or organization name is already taken",
       });
     }
     res.status(500).json({ error: err.message });
