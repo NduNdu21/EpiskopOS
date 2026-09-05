@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Copy, Check } from "lucide-react";
 
 const usernameRegex = /^[a-zA-Z0-9._-]{3,50}$/;
+const inviteCodeRegex = /^[a-zA-Z0-9]{4,20}$/;
 
 const validate = (form) => {
   const errors = {};
@@ -23,6 +24,12 @@ const validate = (form) => {
     errors.username = "Username is required.";
   } else if (!usernameRegex.test(form.username)) {
     errors.username = "3-50 characters: letters, numbers, dots, dashes, underscores only.";
+  }
+
+  if (!form.inviteCode.trim()) {
+    errors.inviteCode = "Invite code is required.";
+  } else if (!inviteCodeRegex.test(form.inviteCode.trim())) {
+    errors.inviteCode = "4-20 characters: letters and numbers only.";
   }
 
   if (!form.password) {
@@ -48,6 +55,7 @@ const CreateOrganization = () => {
     orgName: "",
     name: "",
     username: "",
+    inviteCode: "",
     password: "",
     confirmPassword: "",
   });
@@ -111,8 +119,8 @@ const CreateOrganization = () => {
           <div className="bg-white/10 border border-beige/20 rounded-2xl px-6 py-8">
             <h2 className="text-xl font-semibold text-beige mb-3">Organization created</h2>
             <p className="text-beige/70 text-sm leading-relaxed mb-6">
-              Share this invite code with your team so they can join. You'll need it
-              again yourself if you ever forget it — write it down somewhere safe.
+              Share this invite code with your team so they can join. Write it
+              down somewhere safe — you'll need it yourself to log back in.
             </p>
 
             <div className="flex items-center justify-between gap-3 bg-white/15 border border-beige/40 rounded-2xl px-5 py-4 mb-6">
@@ -152,8 +160,7 @@ const CreateOrganization = () => {
         <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4" noValidate>
           <h2 className="text-xl mb-2 font-semibold text-beige">Create your organization</h2>
           <p className="text-beige/70 text-sm -mt-2 mb-2">
-            You'll be the first admin. A unique invite code is generated automatically
-            for your team to join with.
+            You'll be the first admin. Choose an invite code your team will use to join.
           </p>
 
           <div className="flex flex-col gap-1">
@@ -198,6 +205,22 @@ const CreateOrganization = () => {
               className={inputClass("username")}
             />
             <FieldError message={fieldErrors.username} />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="sr-only" htmlFor="inviteCode">Invite code</label>
+            <input
+              id="inviteCode"
+              name="inviteCode"
+              type="text"
+              value={form.inviteCode}
+              placeholder="Invite code for your team"
+              onChange={handleChange}
+              autoComplete="off"
+              autoCapitalize="characters"
+              className={inputClass("inviteCode")}
+            />
+            <FieldError message={fieldErrors.inviteCode} />
           </div>
 
           <div className="flex flex-col gap-1">

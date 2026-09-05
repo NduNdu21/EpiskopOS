@@ -22,9 +22,9 @@ router.post("/register", (req, res, next) => {
 }, register);
 
 router.post("/register/organization", (req, res, next) => {
-  const { orgName, name, username, password } = req.body;
-  if (!orgName || !name || !username || !password) {
-    return res.status(400).json({ message: "Organization name, your name, username and password required" });
+  const { orgName, name, username, password, inviteCode } = req.body;
+  if (!orgName || !name || !username || !password || !inviteCode) {
+    return res.status(400).json({ message: "Organization name, your name, username, password and invite code required" });
   }
   next();
 }, registerOrganization);
