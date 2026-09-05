@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { getMessages, sendMessage, getMe } from "../api";
+import { getMessages, sendMessage, getMe, getLiveEvent } from "../api";
 import { getSocket } from "../socket";
 
 const TEAM_FROM_ROLE = {
@@ -33,6 +33,7 @@ const Messages = () => {
   const [teamTarget, setTeamTarget] = useState("");
   const [filterScope, setFilterScope] = useState("all");
   const [loading, setLoading] = useState(true);
+  const [liveEventId, setLiveEventId] = useState(null);
   const feedRef = useRef(null);
 
   // Derive role-based flags once user is loaded
@@ -48,6 +49,15 @@ const Messages = () => {
   useEffect(() => {
     getMe()
       .then(setUser)
+      .catch(() => {});
+  }, []);
+
+  // Track whether a service is currently live, so broadcasts sent from
+  // here can be tied to it (Live.jsx's stage mode only shows broadcasts
+  // matching event_id — see fetchData/handleSend below).
+  useEffect(() => {
+    getLiveEvent()
+      .then((event) => setLiveEventId(event?.id || null))
       .catch(() => {});
   }, []);
 
@@ -70,8 +80,16 @@ const Messages = () => {
       }
     });
 
+    // GO_LIVE and END_SERVICE are both emitted to general:${orgId}, which
+    // every socket auto-joins on connect — no extra room join needed here.
+    socket.on("service_update", ({ type, event: updatedEvent }) => {
+      if (type === "GO_LIVE") setLiveEventId(updatedEvent.id);
+      if (type === "END_SERVICE") setLiveEventId(null);
+    });
+
     return () => {
       socket.off("new_message");
+      socket.off("service_update");
     };
   }, [userRole, adminUser, userTeam]);
 
@@ -113,6 +131,7 @@ const Messages = () => {
       scope,
       team_target:
         scope === "team" ? teamTarget || userTeam : undefined,
+      event_id: scope === "broadcast" ? liveEventId || undefined : undefined,
     };
     setContent("");
     try {
