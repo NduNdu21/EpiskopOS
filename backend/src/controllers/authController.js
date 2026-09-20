@@ -3,14 +3,19 @@ const bcrypt = require("bcrypt");
 const generateToken = require("../utils/generateToken");
 const { ASSIGNABLE_ROLES } = require("../constants/roles");
 
+const normalizeInviteCode = (code) => code.trim().toUpperCase();
+const normalizeUsername = (username) => username.trim();
+
 // register controller — joins an existing org via invite code
 exports.register = async (req, res) => {
-  const { name, username, password, role, inviteCode } = req.body;
+  const { name, username: rawUsername, password, role, inviteCode: rawInviteCode } = req.body;
   if (!ASSIGNABLE_ROLES.includes(role)) {
     return res.status(400).json({
       message: `Invalid role. Must be one of: ${ASSIGNABLE_ROLES.join(", ")}`,
     });
   }
+  const username = normalizeUsername(rawUsername);
+  const inviteCode = normalizeInviteCode(rawInviteCode);
   try {
     const orgResult = await pool.query(
       `SELECT id FROM organizations WHERE invite_code = $1`,
@@ -40,17 +45,17 @@ exports.register = async (req, res) => {
 };
 
 // registerOrganization — creates a new org and its first admin.
-// inviteCode is now user-supplied, not generated.
 exports.registerOrganization = async (req, res) => {
-  const { orgName, name, username, password, inviteCode } = req.body;
-  if (!orgName || !name || !username || !password || !inviteCode) {
+  const { orgName, name, username: rawUsername, password, inviteCode: rawInviteCode } = req.body;
+  if (!orgName || !name || !rawUsername || !password || !rawInviteCode) {
     return res.status(400).json({
       message: "Organization name, your name, username, password and invite code are required",
     });
   }
 
-  const normalizedInviteCode = inviteCode.trim().toUpperCase();
-  if (!/^[A-Z0-9]{4,20}$/.test(normalizedInviteCode)) {
+  const username = normalizeUsername(rawUsername);
+  const inviteCode = normalizeInviteCode(rawInviteCode);
+  if (!/^[A-Z0-9]{4,20}$/.test(inviteCode)) {
     return res.status(400).json({
       message: "Invite code must be 4-20 characters, letters and numbers only",
     });
@@ -66,7 +71,7 @@ exports.registerOrganization = async (req, res) => {
       `INSERT INTO organizations (name, slug, invite_code)
        VALUES ($1, $2, $3)
        RETURNING id`,
-      [orgName, slug, normalizedInviteCode],
+      [orgName, slug, inviteCode],
     );
     const organizationId = orgResult.rows[0].id;
 
@@ -81,7 +86,7 @@ exports.registerOrganization = async (req, res) => {
     await client.query("COMMIT");
 
     const token = generateToken(userResult.rows[0]);
-    res.status(201).json({ success: true, token, inviteCode: normalizedInviteCode, organizationId });
+    res.status(201).json({ success: true, token, inviteCode, organizationId });
   } catch (err) {
     await client.query("ROLLBACK");
     if (err.code === "23505") {
@@ -99,13 +104,16 @@ exports.registerOrganization = async (req, res) => {
 // Org-scoped because usernames are only unique per-org, not globally.
 exports.login = async (req, res) => {
   try {
-    const { username, inviteCode, password } = req.body;
+    const { username: rawUsername, inviteCode: rawInviteCode, password } = req.body;
 
-    if (!username || !inviteCode) {
+    if (!rawUsername || !rawInviteCode) {
       return res
         .status(400)
         .json({ message: "Username and organization invite code are required" });
     }
+
+    const username = normalizeUsername(rawUsername);
+    const inviteCode = normalizeInviteCode(rawInviteCode);
 
     const orgResult = await pool.query(
       `SELECT id FROM organizations WHERE invite_code = $1`,
@@ -143,13 +151,14 @@ exports.login = async (req, res) => {
   }
 };
 
-// setUsername — lets an authenticated user (typically one on the legacy
-// email-login path) set their username. Reissues the JWT so the client
-// gets an up-to-date token with username embedded, without a re-login.
+// setUsername — lets an authenticated user set their username. Reissues
+// the JWT so the client gets an up-to-date token without a re-login.
 exports.setUsername = async (req, res) => {
-  const { username } = req.body;
+  const { username: rawUsername } = req.body;
   const userId = req.user.id;
   const organizationId = req.organization_id;
+
+  const username = rawUsername ? normalizeUsername(rawUsername) : rawUsername;
 
   if (!username || !/^[a-zA-Z0-9._-]{3,50}$/.test(username)) {
     return res.status(400).json({
@@ -167,7 +176,7 @@ exports.setUsername = async (req, res) => {
     }
 
     const token = generateToken(result.rows[0]);
-    res.json({ success: true, token, username: result.rows[0].username });
+    res.json({ success: true, username: result.rows[0].username, token });
   } catch (err) {
     if (err.code === "23505") {
       return res
